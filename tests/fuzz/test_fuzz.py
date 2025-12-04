@@ -123,7 +123,7 @@ class StablecoinFuzzer(RuleBasedStateMachine):
     )
     def mint_and_update(self, collateral_seed, user_seed, amount):
         self.mint_and_deposit(collateral_seed, user_seed, amount)
-        self.update_collateral_price(collateral_seed, 0.3)
+        self.update_collateral_price(collateral_seed, 0.85) # Only drop 15% instead of 70%
 
 
     @rule(

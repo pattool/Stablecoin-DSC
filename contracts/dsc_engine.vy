@@ -176,10 +176,6 @@ def burn_dsc(amount: uint256):
 @external
 def liquidate(collateral: address, user: address, debt_to_cover: uint256):
     """
-    1. Check if their health factor is bad
-    2. Cover their debt, by US burning OUR DSC, but reducing THEIR DSC minted
-    3. We will take their collateral
-
     @notice Liquidate an undercollateralized position
     @dev Liquidator pays off user's debt and receives collateral plus a bonus
          The liquidated user's health factor must be below MIN_HEALTH_FACTOR
