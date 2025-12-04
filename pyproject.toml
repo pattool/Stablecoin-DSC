@@ -1,0 +1,17 @@
+[project]
+name = "moccasin_project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "moccasin>=0.4.2",
+    "vyper==0.4.1",
+]
+
+
+[tool.moccasin.project]
+src = "contracts"
+out = "out"
+dot_env = ".env"
+dependencies = ["snekmate==0.1.1"]

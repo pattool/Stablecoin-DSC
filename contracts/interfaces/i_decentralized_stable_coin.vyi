@@ -1,0 +1,23 @@
+# pragma version 0.4.1
+
+# ------------------------------------------------------------------
+#                             NATSPEC
+# ------------------------------------------------------------------
+"""
+@license MIT
+@title i_decentralized_stablecoin
+@author Patrick Pekel
+"""
+
+
+# ------------------------------------------------------------------
+#                            FUNCTIONS
+# ------------------------------------------------------------------
+@external
+def burn_from(owner: address, amount: uint256):
+    ...
+
+
+@external
+def mint(owner:address, amount: uint256):
+    ...
