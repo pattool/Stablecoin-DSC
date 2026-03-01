@@ -34,7 +34,8 @@ from contracts.interfaces import i_decentralized_stable_coin
 # ------------------------------------------------------------------
 implements: i_decentralized_stable_coin
 initializes: ow
-initializes: erc20[ownable := ow] # uses the exactly ownable as we imported as ow
+# uses the exactly ownable as we imported as ow
+initializes: erc20[ownable := ow] 
 
 
 # ------------------------------------------------------------------

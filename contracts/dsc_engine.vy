@@ -49,7 +49,6 @@ COLLATERAL_TOKENS: public(immutable(address[2]))
 # ------------------------------------------------------------------
 #                        STORAGE VARIABLES
 # ------------------------------------------------------------------
-
 # Track which Chainlink oracle to use for each token's price
 token_to_price_feed: public(HashMap[address, address]) 
 
@@ -200,6 +199,7 @@ def liquidate(collateral: address, user: address, debt_to_cover: uint256):
 
 
 @external
+@view
 def get_account_information(user: address) -> (uint256, uint256):
     """
     @notice Get user's account information
@@ -238,6 +238,7 @@ def get_usd_value(token: address, amount: uint256) -> uint256:
 
 
 @external
+@pure
 def calculate_health_factor(total_dsc_minted: uint256, total_collateral_value_usd: uint256) -> uint256:
     """
     @notice Calculate health factor from given values
@@ -251,6 +252,7 @@ def calculate_health_factor(total_dsc_minted: uint256, total_collateral_value_us
 
 
 @external
+@view
 def health_factor(user: address) -> uint256:
     """
     @notice Get user's current health factor
@@ -319,8 +321,8 @@ def _redeem_collateral(token_collateral_address: address, amount: uint256, _from
     log CollateralRedeem(token=token_collateral_address, amount=amount, _from=msg.sender, _to=msg.sender)
 
     # Need IERC20 to call transfer on WETH/WBTC
-    succes: bool = extcall IERC20(token_collateral_address).transfer(_to, amount)
-    assert succes, "DSCEngine: Transfer failed"
+    success: bool = extcall IERC20(token_collateral_address).transfer(_to, amount)
+    assert success, "DSCEngine: Transfer failed"
 
 
 @internal
@@ -352,6 +354,7 @@ def _revert_if_health_factor_broken(user: address):
 
 
 @internal
+@view
 def _get_account_information(user: address) -> (uint256, uint256):
     """
     @notice returns the total DSC minted, and the total value collateral deposited
@@ -365,6 +368,7 @@ def _get_account_information(user: address) -> (uint256, uint256):
 
 
 @internal
+@view
 def _get_account_collateral_value(user: address) -> uint256:
     """
     @notice Calculate total USD value of user's collateral across all token types
@@ -411,6 +415,7 @@ def _get_token_amount_from_usd(token: address, usd_amount_in_wei: uint256) -> ui
 
 
 @internal
+@view
 def _health_factor(user: address) -> uint256:
     """
     @notice How much DSC they minted and how much collateral they have deposited?
@@ -426,6 +431,7 @@ def _health_factor(user: address) -> uint256:
 
 
 @internal
+@pure
 def _calculate_health_factor(total_dsc_minted: uint256, total_collateral_value_usd: uint256) -> uint256:
     """
     @notice Calculate health factor from DSC minted and collateral value
