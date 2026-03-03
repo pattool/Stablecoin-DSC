@@ -13,15 +13,6 @@
 
 
 # ------------------------------------------------------------------
-#                BUILT-IN INTERFACE OF THE VYPER COMPILER
-# ------------------------------------------------------------------
-# @dev We import and implement the `IERC20` interface,
-# which is a built-in interface of the Vyper compiler.
-#from ethereum.ercs import IERC20
-#implements: IERC20  # Does not compile before it Ads all the function of an interface!
-
-
-# ------------------------------------------------------------------
 #                        IMPORT LIBRARIES
 # ------------------------------------------------------------------
 from snekmate.auth import ownable as ow
