@@ -26,7 +26,7 @@ def __init__(_decimals: uint8, _initialAnswer: int256):
     self._updateAnswer(_initialAnswer)
 
 
-#add to sovle issue
+#add to solve issue
 @external
 @view
 def decimals() -> uint8:
