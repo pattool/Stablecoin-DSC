@@ -84,7 +84,7 @@ def __init__(
     dsc_address: address
 ):
     """
-    @notice Initialize the DSCEngine with collateral tokens and price feed
+    @notice Initialize the DSCEngine with two collateral tokens and price feed
     @dev Sets up the mapping between collateral tokens and their Chainlink price feeds
     @param token_addresses Array containing WETH and WBTC token addresses
     @param price_feed_addresses Array containing corresponding Chainlink price feed addresses
@@ -320,7 +320,7 @@ def _redeem_collateral(token_collateral_address: address, amount: uint256, _from
     self.user_to_token_to_amount_deposited[_from][token_collateral_address] -= amount
     log CollateralRedeem(token=token_collateral_address, amount=amount, _from=msg.sender, _to=msg.sender)
 
-    # Need IERC20 to call transfer on WETH/WBTC
+    # Need IERC20 to call transfer on WETH/WBTC (back to the user)
     success: bool = extcall IERC20(token_collateral_address).transfer(_to, amount)
     assert success, "DSCEngine: Transfer failed"
 
