@@ -69,18 +69,26 @@ def test_reverts_if_token_length_doesnt_match_price_feeds(
     
     print("="*70 + "\n")
     
-   
+## Short version   
 #def test_reverts_if_token_length_doesnt_match_price_feeds(
 #    dsc, eth_usd, btc_usd, weth, wbtc
 #):
-#    with pytest.raises(EncodeError):
-#        dsc_engine.deploy([wbtc, weth, weth], [eth_usd, btc_usd], dsc.address)
+#    """Test that deployment fails when token and price feed arrays have different lengths"""
+#
+#    try:
+#        with pytest.raises(EncodeError):
+#            dsc_engine.deploy([wbtc, weth, weth], [eth_usd, btc_usd], dsc.address)
+#    
+#    except Exception as e:
+#        print(f"   ❌ UNEXPECTED ERROR: {type(e).__name__}: {e}")
+#        raise
 
 
 # ------------------------------------------------------------------
 #                          PRICE TESTS
 # ------------------------------------------------------------------
 def test_get_token_amount_from_usd(dsce, weth, eth_usd):
+    """Verify that $100 USD converts to 0.05 WETH at the expected ETH/USD price."""
     
     # Debug: Check the price feed
     decimals = eth_usd.decimals()
@@ -113,7 +121,17 @@ def test_get_token_amount_from_usd(dsce, weth, eth_usd):
     assert abs(actual_weth - expected_weth) <= 1
     assert expected_weth == actual_weth
 
+## Short Version
+#def test_get_token_amount_from_usd(dsce, weth, eth_usd):
+#    """Verify that $100 USD converts to 0.05 WETH at the expected ETH/USD price."""
+#    
+#    expected_weth = to_wei(0.05, "ether")
+#    actual_weth = dsce.get_token_amount_from_usd(weth.address, to_wei(100, "ether"))
+#
+#    assert abs(actual_weth - expected_weth) <= 1
+#    assert expected_weth == actual_weth
 
+    
 def test_get_usd_value(dsce, weth):
     """Test that USD value calculation is correct for a given amount of ETH"""
 
@@ -160,7 +178,30 @@ def test_get_usd_value(dsce, weth):
     # Assertion                                
     assert expected_usd == actual_usd, f"USD value mismatch: expected ${expected_usd / 10**18:,.2f}, got ${actual_usd / 10**18:,.2f}"
     
+##Short version
+#def test_get_usd_value(dsce, weth):
+#    """Test that USD value calculation is correct for a given amount of ETH"""
+#
+#    #Setup
+#    eth_amount = to_wei(15, "ether")
+#    expected_usd = to_wei(30_000, "ether")
+#
+#    # Get actual value from contract
+#    actual_usd = dsce.get_usd_value(weth, eth_amount)
+#
+#    try:
+#        if expected_usd != actual_usd:
+#            difference = actual_usd - expected_usd
+#            print(f"   Difference: {difference} wei (${difference / 10**18:,.2f})")
+#
+#    except Eception as e:
+#        print(f"   ❌ UNEXPECTED ERROR: {type(e).__name__}: {e}")
+#        raise
+#        
+#    # Assertion                                
+#    assert expected_usd == actual_usd, f"USD value mismatch: expected ${expected_usd / 10**18:,.2f}, got ${actual_usd / 10**18:,.2f}"
 
+    
 # ------------------------------------------------------------------
 #                       DEPOSIT COLLATERAL
 # ------------------------------------------------------------------
@@ -222,12 +263,21 @@ def test_reverts_if_collateral_zero(some_user, weth, dsce):
     
     print("="*70 + "\n")
 
-
+## Short version
 #def test_reverts_if_collateral_zero(some_user, weth, dsce):
+#    """Test that depositing zero collateral reverts"""
+#
 #    with boa.env.prank(some_user):
-#        weth.approve(dsce, COLLATERAL_AMOUNT)
-#        with boa.reverts():
-#            dsce.deposit_collateral(weth, 0)
+#        weth.approve(dsce.address, COLLATERAL_AMOUNT)    
+#
+#        try:
+#            with boa.reverts():
+#                dsce.deposit_collateral(weth.address, 0)
+#
+#        except Exception as e:
+#            print(f"   Error Type: {type(e).__name__}")
+#            print(f"   Error Message: {str(e)}")
+#            raise
 
 
 def test_reverts_with_unapproved_collateral(some_user, dsce):
