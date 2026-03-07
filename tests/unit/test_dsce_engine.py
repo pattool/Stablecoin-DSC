@@ -178,7 +178,7 @@ def test_get_usd_value(dsce, weth):
     # Assertion                                
     assert expected_usd == actual_usd, f"USD value mismatch: expected ${expected_usd / 10**18:,.2f}, got ${actual_usd / 10**18:,.2f}"
     
-##Short version
+## Short version
 #def test_get_usd_value(dsce, weth):
 #    """Test that USD value calculation is correct for a given amount of ETH"""
 #
@@ -356,6 +356,19 @@ def test_reverts_with_unapproved_collateral(some_user, dsce):
     
     print("="*70 + "\n")
 
+## Short version
+#def test_reverts_with_unapproved_collateral(some_user, dsce):
+#    """Test that depositing an unapproved/unsupported token reverts"""
+#
+#    random_collateral = deploy_collateral()
+#
+#    try:
+#        with boa.env.prank(some_user):
+#            random_collateral.mock_mint()
+#            with boa.reverts("DSCEngine: Token not supported"):
+#                random_collateral.approve(dsce, COLLATERAL_AMOUNT)                
+#                dsce.deposit_collateral(random_collateral, COLLATERAL_AMOUNT)
+#
 #    except Exception as e:
 #        print(f"Actual error: {e}")
 
@@ -401,8 +414,12 @@ def test_can_deposit_collateral_without_minting(dsce_deposited, dsc, some_user, 
     print(f"{'='*70}\n")
     
     assert dsc.balanceOf(some_user) == 0
-    
-    # assert dsc.balanceOf(some_user) == 0
+
+## Short version
+#def test_can_deposit_collateral_without_minting(dsce_deposited, dsc, some_user, weth):
+#    """Test that user can deposit collateral without minting any DSC tokens"""
+#
+#    assert dsc.balanceOf(some_user) == 0
 
     
 def test_can_deposit_collateral_and_get_account_info(dsce_deposited, some_user, weth, eth_usd):
@@ -485,7 +502,10 @@ def test_can_deposit_collateral_and_get_account_info(dsce_deposited, some_user, 
     assert expected_deposit_amount == COLLATERAL_AMOUNT, \
         f"Conversion mismatch: expected {COLLATERAL_AMOUNT / 10**18} WETH, got {expected_deposit_amount / 10**18} WETH"
 
-    
+## Short version    
+#def test_can_deposit_collateral_and_get_account_info(dsce_deposited, some_user, weth, eth_usd):
+#    """Test that we can deposit collateral and retrieve accurate account information"""
+#    
 #    # Get account info
 #    dsc_minted, collateral_value_usd = dsce_deposited.get_account_information(some_user)
 #    
