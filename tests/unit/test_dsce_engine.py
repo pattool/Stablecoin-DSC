@@ -650,6 +650,34 @@ def test_reverts_if_minted_dsc_breaks_health_factor(dsce, weth, eth_usd, some_us
     
     print(f"{'='*70}\n")
 
+## Short version
+#def test_reverts_if_minted_dsc_breaks_health_factor(dsce, weth, eth_usd, some_user):
+#    """Test that minting too much DSC relative to collateral reverts due to broken health factor""" 
+#
+#    # Get constants
+#    additional_fee_precision = dsce.ADDITIONAL_FEE_PRECISION()
+#    precision = dsce.PRECISION()
+#    price = eth_usd.latestRoundData()[1]
+#    collateral_usd_value = dsce.get_usd_value(weth.address, COLLATERAL_AMOUNT) 
+#    
+#    amount_to_mint = (
+#        COLLATERAL_AMOUNT * (price * additional_fee_precision)
+#    ) // precision
+#
+#    try:
+#        with boa.env.prank(some_user):
+#            weth.approve(dsce, COLLATERAL_AMOUNT)
+#            dsce.calculate_health_factor(
+#                amount_to_mint, collateral_usd_value
+#            )
+#            with boa.reverts("DSCEngine: Health factor broken"):
+#                dsce.deposit_and_mint(
+#                    weth.address, COLLATERAL_AMOUNT, amount_to_mint
+#                ) 
+#
+#    except Exception as e:
+#        print(f"   Error Type: {type(e).__name__}")
+
 
 def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, eth_usd):
     """Test that user can mint DSC after depositing sufficient collateral"""
@@ -749,7 +777,16 @@ def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, e
     assert user_balance == AMOUNT_TO_MINT, \
         f"DSC balance mismatch: expected {AMOUNT_TO_MINT / 10**18} DSC, got {user_balance / 10**18} DSC"
 
+# Short version
+#def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, eth_usd):
+#    """Test that user can mint DSC after depositing sufficient collateral"""
+#
+#    # Get actual DSC token balance
+#    user_balance = dsc.balanceOf(some_user)
+#
+#    assert user_balance == AMOUNT_TO_MINT
 
+    
 # ------------------------------------------------------------------
 #                          MINT DSC TESTS
 # ------------------------------------------------------------------
