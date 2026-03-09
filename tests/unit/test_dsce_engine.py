@@ -951,7 +951,21 @@ def test_cant_burn_more_than_user_has(dsce, dsc, some_user):
     print(f"\n🎯 Validation: Cannot burn DSC that wasn't minted")
     print(f"{'='*70}\n")
 
-        
+## Short version
+#def test_cant_burn_more_than_user_has(dsce, dsc, some_user):
+#    """Test that burning more DSC than user has minted reverts"""
+#
+#    with boa.env.prank(some_user):
+#        dsc.approve(dsce.address, 1)
+#
+#        try:
+#            with boa.reverts():
+#                dsce.burn_dsc(1)
+#
+#        except Exception as e:
+#            print(f"Actual error: {e}")
+
+            
 def test_can_burn_dsc(dsce_minted, dsc, some_user):
     """Test that user can burn their minted DSC tokens"""
     
@@ -998,6 +1012,21 @@ def test_can_burn_dsc(dsce_minted, dsc, some_user):
         print(f"\n🎯 SUCCESS: Burned all DSC (HF improved to {health_factor_after / 10**18:.4f})")
     
     print(f"{'='*70}\n")
+
+## Short version
+#def test_can_burn_dsc(dsce_minted, dsc, some_user):
+#    """Test that user can burn their minted DSC tokens"""
+#
+#    try:
+#        with boa.env.prank(some_user):
+#            dsc.approve(dsce_minted, AMOUNT_TO_MINT)
+#            dsce_minted.burn_dsc(AMOUNT_TO_MINT)
+#            user_balance = dsc.balanceOf(some_user)
+#
+#    except Exception as e:
+#        print(f"Actual error: {e}")
+#        
+#    assert user_balance == 0
 
 
 # ------------------------------------------------------------------
