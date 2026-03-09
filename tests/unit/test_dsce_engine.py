@@ -1091,7 +1091,25 @@ def test_can_redeem_collateral(dsce, weth, dsc, some_user):
     
     print(f"{'='*70}\n")
 
+##Short version
+#def test_can_redeem_collateral(dsce, weth, dsc, some_user):
+#    """Test that user can redeem collateral by burning DSC"""
+#    try:
+#        with boa.env.prank(some_user):
+#            weth.approve(dsce, COLLATERAL_AMOUNT)
+#            dsc.approve(dsce, AMOUNT_TO_MINT)
+#            
+#            dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+#            dsce.redeem_for_dsc(weth, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+#        
+#            user_balance = dsc.balanceOf(some_user)
+#
+#    except Exception as e:
+#        print(f"Actual error: {e}")
+#        
+#    assert user_balance == 0
 
+    
 def test_properly_reports_health_factor(dsce_minted, some_user):
     """Test that health factor is calculated and reported correctly"""
 
@@ -1134,7 +1152,15 @@ def test_properly_reports_health_factor(dsce_minted, some_user):
     print(f"\n🎯 SUCCESS: Health factor = {actual_health_factor / 10**18:.4f} (200x overcollateralized)")
     print(f"{'='*70}\n")
 
+## Short version
+#def test_properly_reports_health_factor(dsce_minted, some_user):
+#    """Test that health factor is calculated and reported correctly"""
+#
+#    expected_health_factor = to_wei(100, "ether")
+#    actual_health_factor = dsce_minted.health_factor(some_user)
+#    assert expected_health_factor == actual_health_factor
 
+    
 def test_health_factor_can_go_below_one(dsce_minted, eth_usd, some_user):
     """Test that health factor goes below 1 when collateral value drops"""
     
@@ -1180,7 +1206,16 @@ def test_health_factor_can_go_below_one(dsce_minted, eth_usd, some_user):
     print(f"\n🎯 SUCCESS: HF dropped to {user_health_factor / 10**18:.4f} - position is now liquidatable")
     print(f"{'='*70}\n")
 
+## Short version
+#def test_health_factor_can_go_below_one(dsce_minted, eth_usd, some_user):
+#    """Test that health factor goes below 1 when collateral value drops"""
+#    
+#    eth_usd_updated_price = 18 * 10**8
+#    eth_usd.updateAnswer(eth_usd_updated_price)
+#    user_health_factor = dsce_minted.health_factor(some_user)
+#    assert user_health_factor == to_wei(0.9, "ether")
 
+    
 # ------------------------------------------------------------------
 #                     LIQUIDATION TESTS
 # ------------------------------------------------------------------
