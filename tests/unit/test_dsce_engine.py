@@ -831,7 +831,31 @@ def test_reverts_if_mint_amount_breaks_health_factor(
 
     print(f"\n🎯 Validation: Contract prevents unhealthy minting")
     print(f"{'='*70}\n")
-        
+
+## Short version
+#def test_reverts_if_mint_amount_breaks_health_factor(
+#    dsce_deposited, eth_usd, some_user, weth
+#):
+#    """Test that minting too much DSC breaks health factor and reverts"""
+#
+#    # Get price and calculate amount to mint (100% of collateral)
+#    price = eth_usd.latestRoundData()[1]
+#    amount_to_mint = (
+#        COLLATERAL_AMOUNT * (price * dsce_deposited.ADDITIONAL_FEE_PRECISION())
+#    ) // dsce_deposited.PRECISION()
+#
+#    collateral_usd = dsce_deposited.get_usd_value(weth.address, COLLATERAL_AMOUNT)
+#
+#    try:
+#        with boa.env.prank(some_user):
+#            dsce_deposited.calculate_health_factor(amount_to_mint, collateral_usd)
+#            with boa.reverts("DSCEngine: Health factor broken"):
+#                dsce_deposited.mint_dsc(amount_to_mint)
+#            
+#    except Exception as e:
+#        print(f"Actual error: {e}")
+
+                
 def test_can_mint_dsc(dsce_deposited, dsc, some_user, weth):
     """Test that user can mint DSC with deposited collateral"""
 
@@ -873,6 +897,22 @@ def test_can_mint_dsc(dsce_deposited, dsc, some_user, weth):
 
         print(f"\n🎯 SUCCESS: Minted {AMOUNT_TO_MINT / 10**18} DSC (HF: {health_factor_after / 10**18:.4f})")        
     print(f"{'='*70}\n")
+
+## Short version
+#def test_can_mint_dsc(dsce_deposited, dsc, some_user, weth):
+#    """Test that user can mint DSC with deposited collateral"""
+#
+#    try:
+#        with boa.env.prank(some_user):
+#            dsce_deposited.mint_dsc(AMOUNT_TO_MINT)
+#            user_balance = dsc.balanceOf(some_user)
+#            
+#    except Exception as e:
+#        print(f"Actual error: {e}")
+#        
+#    assert user_balance == AMOUNT_TO_MINT
+
+   
 # ------------------------------------------------------------------
 #                          BURN DSC TESTS
 # ------------------------------------------------------------------
