@@ -1272,7 +1272,31 @@ def test_cant_liquidate_good_health_factor(
     print(f"\n🎯 SUCCESS: Cannot liquidate healthy positions (HF = {user_hf / 10**18:.4f})")
     print(f"{'='*70}\n")
 
+## Short version
+#def test_cant_liquidate_good_health_factor(
+#    dsce_minted, weth, dsc, some_user, liquidator
+#):
+#    """Test that liquidation fails when user has healthy position"""
+#
+#    weth.mint(liquidator, COLLATERAL_TO_COVER)
+#    
+#    try:
+#        with boa.env.prank(liquidator):
+#            weth.approve(dsce_minted, COLLATERAL_TO_COVER)
+#            dsce_minted.deposit_and_mint(
+#                weth.address, COLLATERAL_TO_COVER, AMOUNT_TO_MINT
+#            )
+#            liquidator_dsc = dsc.balanceOf(liquidator)
+#            dsc.approve(dsce_minted, AMOUNT_TO_MINT)
+#            
+#            
+#            with boa.reverts("DSCEngine: Health factor is good"):
+#                dsce_minted.liquidate(weth.address, some_user, AMOUNT_TO_MINT)
+#        
+#    except Exception as e:
+#        print(f"Actual error: {e}")
 
+        
 def test_liquidation_payout_is_correct(
     starting_liquidator_weth_balance, dsce_liquidated, weth, liquidator
 ):
@@ -1320,7 +1344,27 @@ def test_liquidation_payout_is_correct(
     print(f"\n🎯 SUCCESS: Liquidator received {weth_gained / 10**18:.18f} WETH ({bonus_percentage:.1f}% bonus)")
     print(f"{'='*70}\n")
 
+## Short version
+#def test_liquidation_payout_is_correct(
+#    starting_liquidator_weth_balance, dsce_liquidated, weth, liquidator
+#):
+#    """Test that liquidator receives correct collateral amount including bonus"""
+#
+#    # Get liquidator's balance
+#    liquidator_weth_balance = weth.balanceOf(liquidator)
+#
+#    # Calculate expected payout
+#    liquidation_bonus = dsce_liquidated.LIQUIDATION_BONUS()
+#    debt_covered_in_weth = dsce_liquidated.get_token_amount_from_usd(weth.address, AMOUNT_TO_MINT)
+#    bonus_weth = debt_covered_in_weth // liquidation_bonus
+#    expected_weth = debt_covered_in_weth + bonus_weth
+#
+#    hard_coded_expected = 6_111_111_111_111_111_110
+#    
+#    assert liquidator_weth_balance == hard_coded_expected
+#    assert liquidator_weth_balance == expected_weth
 
+    
 def test_cant_redeem_if_breaks_health_factor(dsce_minted, weth, some_user):
     """Test that redemption fails if it would break health factor"""
     
@@ -1352,4 +1396,15 @@ def test_cant_redeem_if_breaks_health_factor(dsce_minted, weth, some_user):
     print(f"\n🎯 SUCCESS: Cannot redeem collateral that breaks health factor")
     print(f"{'='*70}\n")
 
-
+## Short version
+#def test_cant_redeem_if_breaks_health_factor(dsce_minted, weth, some_user):
+#    """Test that redemption fails if it would break health factor"""
+#
+#    # User has minted DSC, so redeeming all collateral would break health factor
+#    total_dsc_minted, collateral_value = dsce_minted.get_account_information(some_user)
+#    health_factor_before = dsce_minted.health_factor(some_user)
+#    dsce_minted.MIN_HEALTH_FACTOR()
+#
+#    with boa.env.prank(some_user):
+#        with boa.reverts("DSCEngine: Health factor broken"):
+#            dsce_minted.redeem_collateral(weth.address, COLLATERAL_AMOUNT)
