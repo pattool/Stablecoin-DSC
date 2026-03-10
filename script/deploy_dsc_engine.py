@@ -4,6 +4,9 @@ from contracts import dsc_engine
 
 
 def deploy_dsc_engine(dsc: VyperContract):
+    """Deploy DSCEngine with WBTC/WETH collateral and price feeds.
+    Transfers DSC minting rights and ownership to the deployed engine."""
+    
     active_network = get_active_network()
 
     btc_usd = active_network.manifest_named("btc_usd_price_feed")
@@ -22,6 +25,9 @@ def deploy_dsc_engine(dsc: VyperContract):
 
 
 def moccasin_main():
+    """Entry point: fetch the deployed DSC token and 
+    trigger DSCEngine deployment."""
+    
     active_network = get_active_network()
     dsc = active_network.manifest_named("decentralized_stable_coin")
     return deploy_dsc_engine(dsc)
