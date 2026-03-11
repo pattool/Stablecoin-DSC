@@ -25,6 +25,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
 
     @initialize()
     def setup(self):
+        """Initialize the fuzzer with deployed contracts, price feeds,
+        collateral tokens and a set of random non-zero user addresses."""
+        
         self.dsc  = deploy_dsc()
         self.dsce = deploy_dsc_engine(self.dsc)
 
@@ -45,6 +48,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         amount = strategy("uint256", min_value=1, max_value=MAX_DEPOSIT_SIZE)
     )
     def mint_and_deposit(self, collateral_seed, user_seed, amount):
+        """Mint collateral tokens for a random user and deposit them into DSCEngine,
+        simulating realistic collateral deposits with random amounts."""
+        
         # 1. Select a random collateral -> collateral_seed
         # 2. Select a random user       -> user_seed
         # 3. Deposit a random amount    -> amount
@@ -66,6 +72,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         percentage = st.integers(min_value=1, max_value=100)
     )
     def redeem_collateral(self, collateral_seed, user_seed, percentage):
+        """Redeem a random percentage of a user's deposited collateral,
+        skipping if the redeemable amount is zero."""
+        
         print("Redeem collateral!")
         collateral = self._get_collateral_from_seed(collateral_seed)
         user = self.users[user_seed]
@@ -85,10 +94,14 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         amount = strategy("uint256", min_value=1, max_value=MAX_DEPOSIT_SIZE)
     )
     def mint_dsc(self, user_seed, amount, collateral_seed):
+        """Attempt to mint DSC for a random user; if undercollateralized,
+        automatically deposit double the required collateral and retry."""
+        
         user = self.users[user_seed]
         with boa.env.prank(user):
             try:
                 self.dsce.mint_dsc(amount)
+                
             except BoaError as e:
                 if "DSCEngine: Needs more than zero" in str(e.stack_trace[0].vm_error):
                     collateral = self._get_collateral_from_seed(collateral_seed)
@@ -107,6 +120,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         collateral_seed = st.integers(min_value=0, max_value=1),                                 
     )
     def update_collateral_price(self, collateral_seed, percentage_new_price):
+        """Update the mock price feed for a collateral token by a random percentage,
+        simulating realistic market price fluctuations between -20% and +15%."""
+        
         collateral = self._get_collateral_from_seed(collateral_seed)
         price_feed = MockV3Aggregator.at(
             self.dsce.token_to_price_feed(collateral.address)
@@ -122,6 +138,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         amount = strategy("uint256", min_value=1, max_value=MAX_DEPOSIT_SIZE)
     )
     def mint_and_update(self, collateral_seed, user_seed, amount):
+        """Deposit collateral then drop its price by 15%,
+        stress testing the protocol's health factor under mild price drops."""
+        
         self.mint_and_deposit(collateral_seed, user_seed, amount)
         self.update_collateral_price(collateral_seed, 0.85) # Only drop 15% instead of 70%
 
@@ -132,6 +151,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         percentage = st.integers(min_value=1, max_value=100)
     )
     def liquidate_user(self, collateral_seed, user_seed, percentage):
+        """Attempt to liquidate an undercollateralized user by covering a random
+        percentage of their debt, skipping if health factor is still healthy."""
+        
         user = self.users[user_seed]
         health_factor = self.dsce.health_factor(user)
 
@@ -173,6 +195,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
     # Invariant: Protocol must have more value in collateral than total supply.    
     @invariant()
     def protocol_must_have_more_value_than_total_supply(self):
+        """Invariant: total USD value of WETH and WBTC held by DSCEngine
+        must always be greater than or equal to the total DSC supply."""
+        
         total_supply = self.dsc.totalSupply()
         weth_deposited = self.weth.balanceOf(self.dsce.address)
         wbtc_deposited = self.wbtc.balanceOf(self.dsce.address)
@@ -184,6 +209,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
 
     
     def _get_collateral_from_seed(self, seed):
+        """Return WETH for seed 0 or WBTC for any other seed,
+        mapping an integer to a collateral token contract."""
+        
         if seed == 0:
             return self.weth
         else:
