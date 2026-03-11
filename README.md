@@ -21,9 +21,16 @@
 5. Price oracle - Get current ETH price (critical!)
 
 ## Installation
-    - If you have an issue to run it, install virtual environment uv.
-    - uv, is an extremely fast Python package and project manager, written in Rust.        
-   - ### On macOS and Linux:
+
+1. git clone https://github.com/pattool/Stablecoin-DSC
+2. cd mox-stablecoin-cu
+3. mox install
+
+
+- #### If you have an issue to run it, install virtual environment uv.
+    - uv, is an extremely fast Python package and project manager, written in Rust.
+          
+- #### On macOS and Linux:
         curl -LsSf https://astral.sh/uv/install.sh | sh
        
         - Once install follow the next steps:
@@ -31,10 +38,10 @@
            - 2 uv sync
            - 3 source .venv/bin/activate
 
-   - ### On Windows:
+- #### On Windows:
         powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-   - ### Documentation:
+- #### Documentation:
         - uv's documentation is available at docs.astral.sh/uv.
         - Additionally, the command line reference documentation can be viewed with uv help.
 
@@ -47,7 +54,13 @@
 mox run deploy
 ```
 
-2. Run tests
+2. Compile
+
+```
+mox compile
+```
+
+3. Run tests
 
 ```
 mox test
