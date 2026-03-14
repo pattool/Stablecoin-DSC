@@ -58,6 +58,9 @@ user_to_token_to_amount_deposited: public(HashMap[address, HashMap[address, uint
 # Track each user's debt (how much DSC they owe)
 user_to_dsc_minted: public(HashMap[address, uint256]) 
 
+owner: public(address)
+paused: public(bool)
+
 
 # ------------------------------------------------------------------
 #                              EVENTS
@@ -66,12 +69,17 @@ event CollateralDeposited:
     user: indexed(address)
     amount: indexed(uint256)
 
-
 event CollateralRedeem:
     token: indexed(address)
     amount: indexed(uint256)
     _from: address
     _to: address
+
+event Paused:
+    account: address
+
+event Unpaused:
+    account: address
 
 
 # ------------------------------------------------------------------
@@ -96,6 +104,9 @@ def __init__(
     self.token_to_price_feed[token_addresses[0]] = price_feed_addresses[0]
     self.token_to_price_feed[token_addresses[1]] = price_feed_addresses[1]
 
+    self.owner = msg.sender
+    self.paused = False  # NEW
+
 
 # ------------------------------------------------------------------
 #                        EXTERNAL FUNCTIONS
@@ -109,6 +120,7 @@ def deposit_collateral(token_collateral_address: address, amount_collateral: uin
     @param token_collateral_address address of the collateral token to deposit (WETH or WBTC)
     @param amount_collateral amount of token to deposit
     """
+    self._not_paused()  # NEW
     self._deposit_collateral(token_collateral_address, amount_collateral)
 
 
@@ -132,6 +144,7 @@ def mint_dsc(amount: uint256):
     @dev Reverts if minting would break the user's health factor
     @param amount Amount of DSC to mint
     """
+    self._not_paused()  # NEW
     self._mint_dsc(amount)
 
 
@@ -183,6 +196,7 @@ def liquidate(collateral: address, user: address, debt_to_cover: uint256):
     @param user Address of the user to liquidate
     @param debt_to_cover Amount of DSC debt to cover
     """
+    self._not_paused()  # NEW
     assert debt_to_cover > 0, "DSCEngine: Needs more than zero"
     starting_health_factor: uint256 = self._health_factor(user)
     assert starting_health_factor < MIN_HEALTH_FACTOR, "DSCEngine: Health factor is good"
@@ -273,6 +287,25 @@ def get_collateral_balance_of_user(user: address, token_collateral: address) -> 
     @return Amount of collateral deposited by the user
     """
     return self.user_to_token_to_amount_deposited[user][token_collateral]
+
+
+# --- Pause functions ---
+@external
+def pause():
+    """Pause the contract, blocking deposits, mints and liquidations."""
+    self._only_owner()
+    assert not self.paused, "DSCEngine: Already paused"
+    self.paused = True
+    log Paused(account=msg.sender)
+
+
+@external
+def unpause():
+    """Unpause the contract, restoring normal operations."""
+    self._only_owner()
+    assert self.paused, "DSCEngine: Not paused"
+    self.paused = False
+    log Unpaused(account=msg.sender)
 
 
 # ------------------------------------------------------------------
@@ -464,3 +497,12 @@ def _burn_dsc(amount: uint256, on_behalf_of: address, dsc_from: address):
     # Need i_decentralized_stable_coin to call burn_from
     extcall DSC.burn_from(dsc_from, amount)
 
+
+@internal
+def _only_owner():
+    assert msg.sender == self.owner, "DSCEngine: Not owner"
+
+
+@internal
+def _not_paused():  # NEW
+    assert not self.paused, "DSCEngine: Contract is paused"
