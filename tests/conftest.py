@@ -39,6 +39,11 @@ def btc_usd(active_network):
     return active_network.manifest_named("btc_usd_price_feed")
 
 
+@pytest.fixture
+def user():
+    return boa.env.generate_address()
+
+    
 @pytest.fixture(scope="session")
 def some_user(weth, wbtc):
     entropy = 13
@@ -122,4 +127,11 @@ def dsce_liquidated(
         dsce_minted.liquidate(weth, some_user, AMOUNT_TO_MINT)
 
     return dsce_minted
-    
+
+
+@pytest.fixture(scope="function") 
+def paused_dsce(dsc, dsce):
+    """Return a DSCEngine instance in paused state."""
+    with boa.env.prank(dsce.owner()):
+        dsce.pause()
+    return dsce
