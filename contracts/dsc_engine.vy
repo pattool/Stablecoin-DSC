@@ -76,10 +76,10 @@ event CollateralRedeem:
     _to: address
 
 event Paused:
-    account: address
+    account: indexed(address)
 
 event Unpaused:
-    account: address
+    account: indexed(address)
 
 
 # ------------------------------------------------------------------
@@ -133,6 +133,7 @@ def deposit_and_mint(token_collateral_address: address, amount_collateral: uint2
     @param amount_collateral Amount of collateral to deposit
     @param amount_dsc Amount of DSC to mint
     """
+    self._not_paused() # NEW
     self._deposit_collateral(token_collateral_address, amount_collateral)
     self._mint_dsc(amount_dsc)
 
@@ -156,6 +157,7 @@ def redeem_collateral(token_collateral_address: address, amount: uint256):
     @param token_collateral_address Address of the collateral token to redeem
     @param amount Amount of collateral to redeem
     """
+    self._not_paused() # NEW
     self._redeem_collateral(token_collateral_address, amount, msg.sender, msg.sender)
     self._revert_if_health_factor_broken(msg.sender)
     
@@ -169,6 +171,7 @@ def redeem_for_dsc(token_collateral: address, amount_collateral: uint256, amount
     @param amount_collateral Amount of collateral to redeem
     @param amount_dsc Amount of DSC to burn
     """
+    self._not_paused() # NEW
     self._burn_dsc(amount_dsc, msg.sender, msg.sender)
     self._redeem_collateral(token_collateral, amount_collateral, msg.sender, msg.sender)
     self._revert_if_health_factor_broken(msg.sender)
@@ -181,6 +184,7 @@ def burn_dsc(amount: uint256):
     @dev Updates user's DSC minted balance and burns tokens from circulation
     @param amount Amount of DSC to burn
     """
+    self._not_paused() # NEW
     self._burn_dsc(amount, msg.sender, msg.sender)
     self._revert_if_health_factor_broken(msg.sender)
 

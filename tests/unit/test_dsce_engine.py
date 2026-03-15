@@ -1419,11 +1419,13 @@ def test_owner_can_pause(dsce):
         dsce.pause()
     assert dsce.paused() == True
 
+    
 def test_owner_can_unpause(paused_dsce):
     """Verify that the owner can successfully unpause the contract."""
     with boa.env.prank(paused_dsce.owner()):
         paused_dsce.unpause()
     assert paused_dsce.paused() == False
+
 
 def test_non_owner_cannot_pause(dsce, user):
     """Verify that a non-owner address cannot pause the contract."""
@@ -1431,17 +1433,20 @@ def test_non_owner_cannot_pause(dsce, user):
         with boa.reverts():
             dsce.pause()
 
+            
 def test_non_owner_cannot_unpause(paused_dsce, user):
     """Verify that a non-owner address cannot unpause the contract."""
     with boa.env.prank(user):
         with boa.reverts():
             paused_dsce.unpause()
 
+            
 def test_deposit_reverts_when_paused(paused_dsce, weth, user):
     """Verify that deposit_collateral reverts when the contract is paused."""
     with boa.env.prank(user):
         with boa.reverts("DSCEngine: Contract is paused"):
             paused_dsce.deposit_collateral(weth.address, to_wei(1, "ether"))
+
 
 def test_mint_reverts_when_paused(paused_dsce, user):
     """Verify that mint_dsc reverts when the contract is paused."""
@@ -1449,12 +1454,14 @@ def test_mint_reverts_when_paused(paused_dsce, user):
         with boa.reverts("DSCEngine: Contract is paused"):
             paused_dsce.mint_dsc(to_wei(100, "ether"))
 
+            
 def test_liquidate_reverts_when_paused(paused_dsce, weth, user):
     """Verify that liquidate reverts when the contract is paused."""
     with boa.env.prank(user):
         with boa.reverts("DSCEngine: Contract is paused"):
             paused_dsce.liquidate(weth.address, user, to_wei(100, "ether"))
 
+            
 def test_cannot_pause_twice(dsce):
     """Verify that pausing an already paused contract reverts."""
     with boa.env.prank(dsce.owner()):
@@ -1462,8 +1469,38 @@ def test_cannot_pause_twice(dsce):
         with boa.reverts():
             dsce.pause()
 
+            
 def test_cannot_unpause_if_not_paused(dsce):
     """Verify that unpausing an already active contract reverts."""
     with boa.env.prank(dsce.owner()):
         with boa.reverts():
             dsce.unpause()
+
+            
+def test_deposit_and_mint_reverts_when_paused(paused_dsce, weth, user):
+    """Verify that deposit_and_mint reverts when the contract is paused,
+    ensuring both deposit and mint operations are blocked in a single call."""
+    with boa.env.prank(user):
+        with boa.reverts("DSCEngine: Contract is paused"):
+            paused_dsce.deposit_and_mint(weth.address, to_wei(1, "ether"), to_wei(100, "ether"))
+
+
+def test_redeem_collateral_reverts_when_paused(paused_dsce, weth, user):
+    """Verify that redeem_collateral reverts when the contract is paused."""
+    with boa.env.prank(user):
+        with boa.reverts("DSCEngine: Contract is paused"):
+            paused_dsce.redeem_collateral(weth.address, to_wei(1, "ether"))
+
+
+def test_redeem_collateral_for_dsc_reverts_when_paused(paused_dsce, weth, user):
+    """Verify that redeem_collateral_for_dsc reverts when the contract is paused."""
+    with boa.env.prank(user):
+        with boa.reverts("DSCEngine: Contract is paused"):
+            paused_dsce.redeem_for_dsc(weth.address, to_wei(1, "ether"), to_wei(100, "ether"))
+
+
+def test_burn_dsc_reverts_when_paused(paused_dsce, user):
+    """Verify that burn_dsc reverts when the contract is paused."""
+    with boa.env.prank(user):
+        with boa.reverts("DSCEngine: Contract is paused"):
+            paused_dsce.burn_dsc(to_wei(100, "ether"))

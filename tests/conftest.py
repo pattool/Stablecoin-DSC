@@ -135,3 +135,11 @@ def paused_dsce(dsc, dsce):
     with boa.env.prank(dsce.owner()):
         dsce.pause()
     return dsce
+
+
+@pytest.fixture(scope="function")
+def paused_dsce_deposited(dsce_deposited, dsce):
+    """Return a deposited DSCEngine instance in paused state."""
+    with boa.env.prank(dsce.owner()):
+        dsce.pause()
+    return dsce
