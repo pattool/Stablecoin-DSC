@@ -19,7 +19,6 @@ MAX_DEPOSIT_SIZE = to_wei(1000, "ether")
 
 # Invariant: Property of the system that should always be true
 
-
 class StablecoinFuzzer(RuleBasedStateMachine):
     def __init__(self):
         super().__init__()
@@ -213,32 +212,6 @@ class StablecoinFuzzer(RuleBasedStateMachine):
             print(f"Liquidation failed: {e}")
             pass
 
-   
-    # Invariant: Protocol must have more value in collateral than total supply.    
-    @invariant()
-    def protocol_must_have_more_value_than_total_supply(self):
-        """Invariant: total USD value of WETH and WBTC held by DSCEngine
-        must always be greater than or equal to the total DSC supply."""
-        
-        total_supply = self.dsc.totalSupply()
-        weth_deposited = self.weth.balanceOf(self.dsce.address)
-        wbtc_deposited = self.wbtc.balanceOf(self.dsce.address)
-
-        weth_value = self.dsce.get_usd_value(self.weth, weth_deposited)
-        wbtc_value = self.dsce.get_usd_value(self.wbtc, wbtc_deposited)
-
-        assert (weth_value + wbtc_value) >= total_supply
-
-    
-    def _get_collateral_from_seed(self, seed):
-        """Return WETH for seed 0 or WBTC for any other seed,
-        mapping an integer to a collateral token contract."""
-        
-        if seed == 0:
-            return self.weth
-        else:
-            return self.wbtc
-
 
     @precondition(lambda self: not self.dsce.paused())
     @rule()
@@ -286,7 +259,34 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         with boa.env.prank(user):
             with pytest.raises(Exception):
                 self.dsce.deposit_collateral(collateral.address, amount)
-      
+
+        
+    # Invariant: Protocol must have more value in collateral than total supply.    
+    @invariant()
+    def protocol_must_have_more_value_than_total_supply(self):
+        """Invariant: total USD value of WETH and WBTC held by DSCEngine
+        must always be greater than or equal to the total DSC supply."""
+        
+        total_supply = self.dsc.totalSupply()
+        weth_deposited = self.weth.balanceOf(self.dsce.address)
+        wbtc_deposited = self.wbtc.balanceOf(self.dsce.address)
+
+        weth_value = self.dsce.get_usd_value(self.weth, weth_deposited)
+        wbtc_value = self.dsce.get_usd_value(self.wbtc, wbtc_deposited)
+
+        assert (weth_value + wbtc_value) >= total_supply
+
+    
+    def _get_collateral_from_seed(self, seed):
+        """Return WETH for seed 0 or WBTC for any other seed,
+        mapping an integer to a collateral token contract."""
+        
+        if seed == 0:
+            return self.weth
+        else:
+            return self.wbtc
+
+
 
 stable_coin_fuzzer = StablecoinFuzzer.TestCase
 stable_coin_fuzzer.settings = settings(
