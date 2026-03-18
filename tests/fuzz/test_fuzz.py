@@ -122,8 +122,8 @@ class StablecoinFuzzer(RuleBasedStateMachine):
                     collateral_amount = self.dsce.get_token_amount_from_usd(
                         collateral.address, amount
                     )
-                    if collateral_amount == 0: 
-                        collateral_amount = 1
+#                    if collateral_amount == 0: 
+#                        collateral_amount = 1
                     collateral_amount = collateral_amount * 2
                     collateral.mint_amount(collateral_amount)
                     collateral.approve(self.dsce.address, collateral_amount)
@@ -187,8 +187,8 @@ class StablecoinFuzzer(RuleBasedStateMachine):
             self.dsce.deposit_collateral(collateral, amount)
             collateral_usd = self.dsce.get_usd_value(collateral, amount)
             safe_mint = (collateral_usd * 49) // 100
-            if safe_mint == 0:
-                return
+#            if safe_mint == 0:
+#                return
             try:
                 self.dsce.mint_dsc(safe_mint)
             except BoaError:
@@ -202,9 +202,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         # 3. Liquidate half the debt
         total_dsc_minted, _ = self.dsce.get_account_information(user)
         debt_to_cover = total_dsc_minted // 2
-        if debt_to_cover == 0:
-            price_feed.updateAnswer(current_price)
-            return
+#        if debt_to_cover == 0:
+#            price_feed.updateAnswer(current_price)
+#            return
  
         # Liquidator deposits 4x the needed collateral and mints DSC through the engine
         liquidator_collateral = self.dsce.get_token_amount_from_usd(
