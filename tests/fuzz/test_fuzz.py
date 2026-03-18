@@ -168,50 +168,63 @@ class StablecoinFuzzer(RuleBasedStateMachine):
     @rule(
         collateral_seed = st.integers(min_value=0, max_value=1),
         user_seed= st.integers(min_value=0, max_value=USERS_SIZE - 1),
-        percentage = st.integers(min_value=1, max_value=100)
     )
-    def liquidate_user(self, collateral_seed, user_seed, percentage):
-        """Attempt to liquidate an undercollateralized user by covering a random
-        percentage of their debt, skipping if health factor is still healthy."""
-
-        assume(not self.dsce.paused()) # Add
-        
-        user = self.users[user_seed]
-        health_factor = self.dsce.health_factor(user)
-
-        print(f"Attempting liquidation for user {user_seed}, health factor: {health_factor}")
-        
-        # Only proceed if health factor is broken
-        assume(health_factor < int(1e18))
-        
-        # Get user's debt and collateral info
-        total_dsc_minted, total_collateral_value_usd = self.dsce.get_account_information(user)
-        
-        # Skip if no debt
-        assume(total_dsc_minted > 0)
-        
-        # Calculate debt to cover based on percentage
-        debt_to_cover = (total_dsc_minted * percentage) // 100
-        assume(debt_to_cover > 0)
-        
-        # Select collateral to seize
+    def liquidate_user(self, collateral_seed, user_seed):
+        """Force a liquidatable position by depositing, minting near max capacity,
+        then dropping the price 5% — just enough to break health factor.
+        Liquidates half the debt via the DSCEngine to hit the liquidation code path."""
+ 
+        assume(not self.dsce.paused())
+ 
         collateral = self._get_collateral_from_seed(collateral_seed)
-
-        print(f"Liquidating {debt_to_cover} DSC worth of {collateral.name()}")
-        
+        user = self.users[user_seed]
+        amount = to_wei(10, "ether")
+ 
+        # 1. User deposits collateral and mints DSC at 49% — health factor starts at ~1.02
+        with boa.env.prank(user):
+            collateral.mint_amount(amount)
+            collateral.approve(self.dsce.address, amount)
+            self.dsce.deposit_collateral(collateral, amount)
+            collateral_usd = self.dsce.get_usd_value(collateral, amount)
+            safe_mint = (collateral_usd * 49) // 100
+            if safe_mint == 0:
+                return
+            try:
+                self.dsce.mint_dsc(safe_mint)
+            except BoaError:
+                return
+ 
+        # 2. Drop price 5% — health factor falls to ~0.97, making position liquidatable
+        price_feed = MockV3Aggregator.at(self.dsce.token_to_price_feed(collateral.address))
+        current_price = price_feed.latestAnswer()
+        price_feed.updateAnswer(int(current_price * 0.95))
+ 
+        # 3. Liquidate half the debt
+        total_dsc_minted, _ = self.dsce.get_account_information(user)
+        debt_to_cover = total_dsc_minted // 2
+        if debt_to_cover == 0:
+            price_feed.updateAnswer(current_price)
+            return
+ 
+        # Liquidator deposits 4x the needed collateral and mints DSC through the engine
+        liquidator_collateral = self.dsce.get_token_amount_from_usd(
+            collateral.address, debt_to_cover
+        ) * 4
+ 
         try:
             with boa.env.prank(self.liquidator):
-                # Liquidator needs DSC to burn the debt
-                self.dsc.mint(self.liquidator, debt_to_cover)
+                collateral.mint_amount(liquidator_collateral)
+                collateral.approve(self.dsce.address, liquidator_collateral)
+                self.dsce.deposit_collateral(collateral, liquidator_collateral)
+                self.dsce.mint_dsc(debt_to_cover)
                 self.dsc.approve(self.dsce.address, debt_to_cover)
-                
-                # Perform liquidation
                 self.dsce.liquidate(collateral.address, user, debt_to_cover)
-                print(f"Successfully liquidated {debt_to_cover} DSC")
+                print(f"Liquidation successful!")
         except BoaError as e:
             print(f"Liquidation failed: {e}")
-            pass
-
+ 
+        # Always restore price to avoid breaking the invariant
+        price_feed.updateAnswer(current_price)
 
     @precondition(lambda self: not self.dsce.paused())
     @rule()
