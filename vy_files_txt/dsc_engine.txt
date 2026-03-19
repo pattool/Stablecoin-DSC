@@ -297,8 +297,8 @@ def get_collateral_balance_of_user(user: address, token_collateral: address) -> 
 @external
 def pause():
     """Pause the contract, blocking deposits, mints and liquidations."""
-    self._only_owner()                                  # only owner can pause
-    assert not self.paused, "DSCEngine: Already paused" # can't pause twice
+    self._only_owner()
+    assert not self.paused, "DSCEngine: Already paused"
     self.paused = True
     log Paused(account=msg.sender)
 
@@ -306,8 +306,8 @@ def pause():
 @external
 def unpause():
     """Unpause the contract, restoring normal operations."""
-    self._only_owner()                          # only owner can unpause
-    assert self.paused, "DSCEngine: Not paused" # can't unpause if not paused
+    self._only_owner()
+    assert self.paused, "DSCEngine: Not paused"
     self.paused = False
     log Unpaused(account=msg.sender)
 

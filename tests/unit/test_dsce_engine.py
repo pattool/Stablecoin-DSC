@@ -51,21 +51,17 @@ def test_reverts_if_token_length_doesnt_match_price_feeds(
     print(f"\n🧪 Attempting Deployment...")
 
     # Attempt deployment - should fail
-    try:
-        with pytest.raises(EncodeError):
-            dsc_engine.deploy(
-                [wbtc.address if hasattr(wbtc, 'address') else wbtc,
-                 weth.address if hasattr(weth, 'address') else weth,
-                 weth.address if hasattr(weth, 'address') else weth],
-                [eth_usd.address if hasattr(eth_usd, 'address') else eth_usd,
-                 btc_usd.address if hasattr(btc_usd, 'address') else btc_usd],
-                dsc.address
-            )
-        print(f"   ✅ SUCCESS: Deployment correctly failed with EncodeError")
-        print(f"   The contract properly rejected mismatched array lengths")
-    except Exception as e:
-        print(f"   ❌ UNEXPECTED ERROR: {type(e).__name__}: {e}")
-        raise
+    with pytest.raises(EncodeError):
+        dsc_engine.deploy(
+            [wbtc.address if hasattr(wbtc, 'address') else wbtc,
+             weth.address if hasattr(weth, 'address') else weth,
+             weth.address if hasattr(weth, 'address') else weth],
+            [eth_usd.address if hasattr(eth_usd, 'address') else eth_usd,
+             btc_usd.address if hasattr(btc_usd, 'address') else btc_usd],
+            dsc.address
+        )
+    print(f"   ✅ SUCCESS: Deployment correctly failed with EncodeError")
+    print(f"   The contract properly rejected mismatched array lengths")
     
     print("="*70 + "\n")
     
@@ -163,20 +159,17 @@ def test_get_usd_value(dsce, weth):
     print(f"   Actual USD (raw): {actual_usd}")
     print(f"   Actual USD (formatted): ${actual_usd / 10**18:,.2f}")
 
-     # Comparison
+    # Comparison
     print(f"\n🔍 Comparison:")
     print(f"   Expected: ${expected_usd / 10**18:,.2f}")
     print(f"   Actual:   ${actual_usd / 10**18:,.2f}")
     print(f"   Match: {'✓ YES' if expected_usd == actual_usd else '✗ NO'}")
-    
-    if expected_usd != actual_usd:
-        difference = actual_usd - expected_usd
-        print(f"   Difference: {difference} wei (${difference / 10**18:,.2f})")
-    
-    print("="*70 + "\n")
-                                    
+                                        
     # Assertion                                
     assert expected_usd == actual_usd, f"USD value mismatch: expected ${expected_usd / 10**18:,.2f}, got ${actual_usd / 10**18:,.2f}"
+
+    print("="*70 + "\n")
+
     
 ## Short version
 #def test_get_usd_value(dsce, weth):
@@ -241,18 +234,11 @@ def test_reverts_if_collateral_zero(some_user, weth, dsce):
         print(f"   Expected: Should REVERT")
         print(f"   Reason: Contract should reject zero deposits")
 
-        try:
-            with boa.reverts():
-                dsce.deposit_collateral(weth.address, 0)
+        with boa.reverts():
+            dsce.deposit_collateral(weth.address, 0)
 
-            print(f"\n✅ SUCCESS: Transaction correctly reverted!")
-            print(f"   The contract properly rejected zero collateral")
-
-        except Exception as e:
-            print(f"\n🔴 ERROR: Unexpected behavior!")
-            print(f"   Error Type: {type(e).__name__}")
-            print(f"   Error Message: {str(e)}")
-            raise
+        print(f"\n✅ SUCCESS: Transaction correctly reverted!")
+        print(f"   The contract properly rejected zero collateral")
 
     print(f"\n💰 User Balances After (should be unchanged):")
     user_weth_balance_after = weth.balanceOf(some_user)
@@ -302,59 +288,35 @@ def test_reverts_with_unapproved_collateral(some_user, dsce):
     
     print(f"\n👤 User Address: {some_user}")
     
-    try:
-        with boa.env.prank(some_user):
-            print(f"\n💰 Step 2: Minting Random Tokens to User...")
-            random_collateral.mock_mint()
-            user_balance = random_collateral.balanceOf(some_user)
-            print(f"   ✅ Minted successfully")
-            print(f"   User Balance: {user_balance / 10**18} tokens")
-
-            print(f"\n📝 Step 3: Approving DSCEngine to spend tokens...")
-            print(f"   Approval Amount: {COLLATERAL_AMOUNT / 10**18} tokens")
-            print(f"   Spender: {dsce.address}")
-
-            print(f"\n❌ Step 4: Attempting to deposit UNSUPPORTED token...")
-            print(f"   Token Address: {random_collateral.address}")
-            print(f"   Deposit Amount: {COLLATERAL_AMOUNT / 10**18} tokens")
-            print(f"   Expected Result: Should REVERT")
-            print(f"   Expected Error: 'DSCEngine: Token not supported'")
-            
-            with boa.reverts("DSCEngine: Token not supported"):
-                # Note: approve is INSIDE the revert context
-                # This means if approve fails, the test will fail
-                random_collateral.approve(dsce, COLLATERAL_AMOUNT)
-                print(f"   ⚠️  Approval executed (inside revert context)")
-                
-                dsce.deposit_collateral(random_collateral, COLLATERAL_AMOUNT)
-                print(f"   ⚠️  Deposit executed (should not reach here)")
-
-            print(f"\n✅ SUCCESS: Transaction correctly reverted!")
-            print(f"   The DSCEngine properly rejected the unsupported token")
-
-    except Exception as e:
-        print(f"\n🔴 ERROR CAUGHT:")
-        print(f"   Error Type: {type(e).__name__}")
-        print(f"   Error Message: {str(e)}")
-        print(f"\n🔍 Analysis:")
-        
-        if "DSCEngine: Token not supported" in str(e):
-            print(f"   ✅ Correct error: Token rejection worked as expected")
-        elif "does not match" in str(e):
-            print(f"   ❌ Error message mismatch!")
-            print(f"   Expected: 'DSCEngine: Token not supported'")
-            print(f"   Got something else - check your Vyper contract error messages")
-        else:
-            print(f"   ❌ Unexpected error type")
-        
-        print(f"\n💡 Debug Info:")
-        print(f"   Random Token Address: {random_collateral.address}")
-        print(f"   DSCEngine Address: {dsce.address}")
-        print(f"   User Address: {some_user}")
-        
-        raise
     
+    with boa.env.prank(some_user):
+        print(f"\n💰 Step 2: Minting Random Tokens to User...")
+        random_collateral.mock_mint()
+        user_balance = random_collateral.balanceOf(some_user)
+        print(f"   ✅ Minted successfully")
+        print(f"   User Balance: {user_balance / 10**18} tokens")
+        print(f"\n📝 Step 3: Approving DSCEngine to spend tokens...")
+        print(f"   Approval Amount: {COLLATERAL_AMOUNT / 10**18} tokens")
+        print(f"   Spender: {dsce.address}")
+        print(f"\n❌ Step 4: Attempting to deposit UNSUPPORTED token...")
+        print(f"   Token Address: {random_collateral.address}")
+        print(f"   Deposit Amount: {COLLATERAL_AMOUNT / 10**18} tokens")
+        print(f"   Expected Result: Should REVERT")
+        print(f"   Expected Error: 'DSCEngine: Token not supported'")
+        
+        with boa.reverts("DSCEngine: Token not supported"):
+            # Note: approve is INSIDE the revert context
+            # This means if approve fails, the test will fail
+            random_collateral.approve(dsce, COLLATERAL_AMOUNT)
+            print(f"   ⚠️  Approval executed (inside revert context)")
+            
+            dsce.deposit_collateral(random_collateral, COLLATERAL_AMOUNT)
+            
+        print(f"\n✅ SUCCESS: Transaction correctly reverted!")
+        print(f"   The DSCEngine properly rejected the unsupported token")
+            
     print("="*70 + "\n")
+    
 
 ## Short version
 #def test_reverts_with_unapproved_collateral(some_user, dsce):
@@ -408,8 +370,7 @@ def test_can_deposit_collateral_without_minting(dsce_deposited, dsc, some_user, 
     print(f"   DSC Minted: {dsc_minted / 10**18} DSC {'✓ (0 as expected)' if dsc_minted == 0 else '✗'}")
     print(f"   DSC Balance: {dsc_balance / 10**18} DSC {'✓ (0 as expected)' if dsc_balance == 0 else '✗'}")
 
-    if dsc_balance == 0 and collateral_value_usd > 0:
-        print(f"\n🎯 SUCCESS: User deposited collateral without minting DSC!")
+    print(f"\n🎯 SUCCESS: User deposited collateral without minting DSC!")
     
     print(f"{'='*70}\n")
     
@@ -485,12 +446,7 @@ def test_can_deposit_collateral_and_get_account_info(dsce_deposited, some_user, 
     print(f"   Difference: {abs(expected_deposit_amount - COLLATERAL_AMOUNT)} wei")
     print(f"   Difference (ether): {abs(expected_deposit_amount - COLLATERAL_AMOUNT) / 10**18}")
     
-    if expected_deposit_amount == COLLATERAL_AMOUNT:
-        print(f"   Status: ✓ PERFECT MATCH")
-    elif abs(expected_deposit_amount - COLLATERAL_AMOUNT) <= 10:
-        print(f"   Status: ✓ PASS (within tolerance)")
-    else:
-        print(f"   Status: ✗ FAIL (difference too large)")
+    print(f"   Status: ✓ PERFECT MATCH")
     
     print(f"\n🎯 Test Summary:")
     print(f"   ✓ User has 0 DSC minted (can deposit without minting)")
@@ -592,56 +548,32 @@ def test_reverts_if_minted_dsc_breaks_health_factor(dsce, weth, eth_usd, some_us
     print(f"   Minimum Health Factor: {min_health_factor / 10**18:.4f}")
     print(f"   Status: {'✗ UNHEALTHY' if expected_health_factor < min_health_factor else '✓ HEALTHY'}")
     
-    if expected_health_factor < min_health_factor:
-        print(f"   ⚠️  This SHOULD revert - health factor too low!")
+    print(f"   ⚠️  This SHOULD revert - health factor too low!")
         
-    try:
-        with boa.env.prank(some_user):
-            print(f"\n📝 Step 1: Approving WETH...")
-            weth.approve(dsce.address, COLLATERAL_AMOUNT)
-            print(f"   ✓ Approved {COLLATERAL_AMOUNT / 10**18} WETH")
-            
-            print(f"\n🧮 Step 2: Calculate Health Factor...")
-            calculated_health_factor = dsce.calculate_health_factor(
-                amount_to_mint, collateral_usd_value
-            )
-            print(f"   Calculated Health Factor: {calculated_health_factor / 10**18:.4f}")
-            print(f"   Min Required: {min_health_factor / 10**18:.4f}")
-            print(f"   Healthy? {'✓ YES' if calculated_health_factor >= min_health_factor else '✗ NO'}")
-            
-            print(f"\n❌ Step 3: Attempting to Deposit and Mint (should revert)...")
-            print(f"   Depositing: {COLLATERAL_AMOUNT / 10**18} WETH")
-            print(f"   Minting: {amount_to_mint / 10**18:,.2f} DSC")
-            print(f"   Expected: Revert with 'DSCEngine: Health factor broken'")
-            
-            with boa.reverts("DSCEngine: Health factor broken"):
-                dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, amount_to_mint)
-            
-            print(f"\n✅ SUCCESS: Transaction correctly reverted!")
-            print(f"   The contract properly rejected the unhealthy position")
-
-    except Exception as e:
-        print(f"\n🔴 ERROR CAUGHT:")
-        print(f"   Error Type: {type(e).__name__}")
-        print(f"   Error Message: {str(e)}")
+    
+    with boa.env.prank(some_user):
+        print(f"\n📝 Step 1: Approving WETH...")
+        weth.approve(dsce.address, COLLATERAL_AMOUNT)
+        print(f"   ✓ Approved {COLLATERAL_AMOUNT / 10**18} WETH")
         
-        print(f"\n🔍 Analysis:")
-        if "DSCEngine: Health factor broken" in str(e):
-            print(f"   ✅ Correct error: Health factor check working properly")
-        elif "does not match" in str(e):
-            print(f"   ❌ Error message mismatch!")
-            print(f"   Expected: 'DSCEngine: Health factor broken'")
-            print(f"   Check your Vyper contract's error message")
-        else:
-            print(f"   ❌ Unexpected error occurred")
+        print(f"\n🧮 Step 2: Calculate Health Factor...")
+        calculated_health_factor = dsce.calculate_health_factor(
+            amount_to_mint, collateral_usd_value
+        )
+        print(f"   Calculated Health Factor: {calculated_health_factor / 10**18:.4f}")
+        print(f"   Min Required: {min_health_factor / 10**18:.4f}")
+        print(f"   Healthy? {'✓ YES' if calculated_health_factor >= min_health_factor else '✗ NO'}")
         
-        print(f"\n💡 Debug Info:")
-        print(f"   Collateral: {COLLATERAL_AMOUNT / 10**18} WETH = ${collateral_usd_value / 10**18:,.2f}")
-        print(f"   Trying to mint: {amount_to_mint / 10**18:,.2f} DSC")
-        print(f"   Health Factor would be: {expected_health_factor / 10**18:.4f}")
-        print(f"   This is {'below' if expected_health_factor < min_health_factor else 'above'} minimum of {min_health_factor / 10**18:.4f}")
+        print(f"\n❌ Step 3: Attempting to Deposit and Mint (should revert)...")
+        print(f"   Depositing: {COLLATERAL_AMOUNT / 10**18} WETH")
+        print(f"   Minting: {amount_to_mint / 10**18:,.2f} DSC")
+        print(f"   Expected: Revert with 'DSCEngine: Health factor broken'")
         
-        raise
+        with boa.reverts("DSCEngine: Health factor broken"):
+            dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, amount_to_mint)
+        
+        print(f"\n✅ SUCCESS: Transaction correctly reverted!")
+        print(f"   The contract properly rejected the unhealthy position")
     
     print(f"\n🎯 Test Summary:")
     print(f"   ✓ Attempted to mint 100% of collateral value as DSC")
@@ -730,8 +662,6 @@ def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, e
     if total_dsc_minted > 0:
         collateral_ratio = (collateral_value_usd * 100) // total_dsc_minted
         print(f"   Collateralization Ratio: {collateral_ratio / 10**18:.2f}%")
-    else:
-        print(f"   Collateralization Ratio: N/A (no DSC minted)")
         
     # Get actual DSC token balance
     print(f"\n🪙 DSC Token Balance Check:")
@@ -754,12 +684,6 @@ def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, e
         print(f"   ✓ DSC tokens were transferred to user's wallet")
         print(f"   ✓ Internal tracking matches actual token balance")
         print(f"   ✓ Health factor remains healthy ({health_factor / 10**18:.4f})")
-    else:
-        print(f"\n❌ MISMATCH DETECTED:")
-        print(f"   Expected: {AMOUNT_TO_MINT / 10**18:,.2f} DSC")
-        print(f"   Actual: {user_balance / 10**18:,.2f} DSC")
-        print(f"   Difference: {abs(user_balance - AMOUNT_TO_MINT) / 10**18:,.2f} DSC")
-        print(f"   Difference (raw): {abs(user_balance - AMOUNT_TO_MINT)} wei")
     
     # Additional context
     print(f"\n📊 Summary:")
@@ -768,9 +692,8 @@ def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, e
     print(f"   DSC Token Balance: {user_balance / 10**18:,.2f} DSC")
     print(f"   Health Factor: {health_factor / 10**18:.4f}")
 
-    if total_dsc_minted > 0:
-        overcollateralization = ((collateral_value_usd - total_dsc_minted) / total_dsc_minted) * 100
-        print(f"   Overcollateralization: {overcollateralization / 10**18:.2f}%")
+    overcollateralization = ((collateral_value_usd - total_dsc_minted) / total_dsc_minted) * 100
+    print(f"   Overcollateralization: {overcollateralization / 10**18:.2f}%")
     
     print(f"{'='*70}\n")
     
