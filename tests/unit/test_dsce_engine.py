@@ -659,10 +659,10 @@ def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, e
     print(f"   Status: {'✓ HEALTHY' if health_factor >= min_health_factor else '✗ UNHEALTHY'}")
     
     # Calculate collateralization ratio
-    if total_dsc_minted > 0:
-        collateral_ratio = (collateral_value_usd * 100) // total_dsc_minted
-        print(f"   Collateralization Ratio: {collateral_ratio / 10**18:.2f}%")
-        
+    collateral_ratio = (collateral_value_usd * 100) // total_dsc_minted
+    print(f"   Collateralization Ratio: {collateral_ratio / 10**18:.2f}%")
+
+    
     # Get actual DSC token balance
     print(f"\n🪙 DSC Token Balance Check:")
     user_balance = dsc.balanceOf(some_user)
@@ -678,12 +678,12 @@ def test_can_mint_with_deposited_collateral(dsce_minted, dsc, some_user, weth, e
     print(f"   Actual Balance: {user_balance / 10**18:,.2f} DSC")
     print(f"   Match: {'✓ YES' if user_balance == AMOUNT_TO_MINT else '✗ NO'}")
 
-    if user_balance == AMOUNT_TO_MINT:
-        print(f"\n🎯 Test Validations:")
-        print(f"   ✓ User successfully minted {AMOUNT_TO_MINT / 10**18:,.2f} DSC")
-        print(f"   ✓ DSC tokens were transferred to user's wallet")
-        print(f"   ✓ Internal tracking matches actual token balance")
-        print(f"   ✓ Health factor remains healthy ({health_factor / 10**18:.4f})")
+    
+    print(f"\n🎯 Test Validations:")
+    print(f"   ✓ User successfully minted {AMOUNT_TO_MINT / 10**18:,.2f} DSC")
+    print(f"   ✓ DSC tokens were transferred to user's wallet")
+    print(f"   ✓ Internal tracking matches actual token balance")
+    print(f"   ✓ Health factor remains healthy ({health_factor / 10**18:.4f})")
     
     # Additional context
     print(f"\n📊 Summary:")
