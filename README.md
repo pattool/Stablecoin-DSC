@@ -24,9 +24,9 @@
 
 ### Implemented
 - **Emergency Pause Mechanism** - Owner can pause all state-changing operations in case of emergency.
+- **Chainlink Price Feed Staleness Check** - Reject stale oracle prices to prevent manipulation during feed outages.
 
 ### Planned
-- **Chainlink Price Feed Staleness Check** - Reject stale oracle prices to prevent manipulation during feed outages.
 - **Two-step Ownership Transfer** - Prevent accidental loss of contract ownership by requiring the new owner to accept.
 - **Liquidation Incentive Scaling** - Dynamic liquidation bonus based on how far below the health factor a position is.
 - **Minting Fee** - Charge a small protocol fee on DSC minting to create a sustainable revenue model.
