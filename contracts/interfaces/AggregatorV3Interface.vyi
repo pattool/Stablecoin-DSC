@@ -36,11 +36,11 @@ def version() -> uint256:
 @view
 def getRoundData(
     _roundId: uint80,
-) -> (uint80, int256, uint256, uint256, uint80):
+) -> (uint256, int256, uint256, uint256, uint256):
     ...
 
 
 @external
 @view
-def latestRoundData() -> (uint80, int256, uint256, uint256, uint80):
+def latestRoundData() -> (uint256, int256, uint256, uint256, uint256):
     ...
