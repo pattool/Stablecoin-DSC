@@ -37,7 +37,7 @@ LIQUIDATION_TRESHOLD: public(constant(uint256)) = 50
 LIQUIDATION_PRECISION: public(constant(uint256)) = 100
 LIQUIDATION_BONUS: public(constant(uint256)) = 10
 MIN_HEALTH_FACTOR: public(constant(uint256)) = 1 * (10 ** 18)
-
+STALE_PRICE_DELAY: public(constant(uint256)) = 3600  # 1 hour in seconds
 
 # ------------------------------------------------------------------
 #                            IMMUTABLES
@@ -431,7 +431,14 @@ def _get_usd_value(token: address, amount: uint256) -> uint256:
     @return USD value with 18 decimals
     """
     price_feed: AggregatorV3Interface = AggregatorV3Interface(self.token_to_price_feed[token])
-    price: int256 = staticcall price_feed.latestAnswer()
+    round_id: uint256 = 0
+    price: int256 = 0
+    started_at: uint256 = 0
+    updated_at: uint256 = 0
+    answered_in_round: uint256 = 0
+    round_id, price, started_at, updated_at, answered_in_round = staticcall price_feed.latestRoundData()
+    assert (block.timestamp - updated_at) <= STALE_PRICE_DELAY, "DSCEngine: Stale price feed"
+    assert price > 0, "DSCEngine: Invalid price"
     return ((convert(price, uint256) * ADDITIONAL_FEE_PRECISION) * amount) // PRECISION
 
 
@@ -446,8 +453,14 @@ def _get_token_amount_from_usd(token: address, usd_amount_in_wei: uint256) -> ui
     @return Token amount
     """
     price_feed: AggregatorV3Interface = AggregatorV3Interface(self.token_to_price_feed[token])
-    price: int256 = staticcall price_feed.latestAnswer()
-    #return (usd_amount_in_wei * PRECISION) // (convert(price, uint256)) * ADDITIONAL_FEE_PRECISION
+    round_id: uint256 = 0
+    price: int256 = 0
+    started_at: uint256 = 0
+    updated_at: uint256 = 0
+    answered_in_round: uint256 = 0
+    round_id, price, started_at, updated_at, answered_in_round = staticcall price_feed.latestRoundData()
+    assert (block.timestamp - updated_at) <= STALE_PRICE_DELAY, "DSCEngine: Stale price feed"
+    assert price > 0, "DSCEngine: Invalid price"
     return (usd_amount_in_wei * (10 ** 8)) // (convert(price, uint256))
 
 
