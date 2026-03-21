@@ -1427,3 +1427,61 @@ def test_burn_dsc_reverts_when_paused(paused_dsce, user):
     with boa.env.prank(user):
         with boa.reverts("DSCEngine: Contract is paused"):
             paused_dsce.burn_dsc(to_wei(100, "ether"))
+
+
+# ------------------------------------------------------------------
+#                     PRICE FEED STALENESS TESTS
+# ------------------------------------------------------------------
+def test_reverts_when_price_feed_is_stale(dsce, weth, eth_usd):
+    """Verify that get_usd_value reverts when the price feed is older than 1 hour."""
+    
+    # Advance time by 2 hours — makes the price stale
+    boa.env.time_travel(seconds=7200)
+    
+    with boa.reverts("DSCEngine: Stale price feed"):
+        dsce.get_usd_value(weth.address, to_wei(1, "ether"))
+
+
+def test_reverts_when_price_is_invalid(dsce, weth, eth_usd):
+    """Verify that get_usd_value reverts when the price feed returns zero."""
+    
+    # Set price to 0 — simulates a broken/invalid price feed
+    eth_usd.updateAnswer(0)
+    
+    with boa.reverts("DSCEngine: Invalid price"):
+        dsce.get_usd_value(weth.address, to_wei(1, "ether"))
+
+
+def test_fresh_price_feed_works(dsce, weth, eth_usd):
+    """Verify that get_usd_value works normally with a fresh valid price."""
+    
+    expected_usd = to_wei(2000, "ether")
+    actual_usd = dsce.get_usd_value(weth.address, to_wei(1, "ether"))
+    
+    assert actual_usd == expected_usd
+
+
+def test_get_collateral_balance_of_user(dsce_deposited, some_user, weth):
+    """Verify get_collateral_balance_of_user returns correct deposited amount."""
+    balance = dsce_deposited.get_collateral_balance_of_user(some_user, weth.address)
+    assert balance == COLLATERAL_AMOUNT
+
+
+def test_get_token_amount_from_usd_reverts_when_stale(dsce, weth):
+    """Verify get_token_amount_from_usd reverts when price feed is stale."""
+    boa.env.time_travel(seconds=7200)
+    with boa.reverts("DSCEngine: Stale price feed"):
+        dsce.get_token_amount_from_usd(weth.address, to_wei(100, "ether"))
+
+
+def test_get_token_amount_from_usd_reverts_when_price_invalid(dsce, weth, eth_usd):
+    """Verify get_token_amount_from_usd reverts when price is zero."""
+    eth_usd.updateAnswer(0)
+    with boa.reverts("DSCEngine: Invalid price"):
+        dsce.get_token_amount_from_usd(weth.address, to_wei(100, "ether"))
+
+
+def test_health_factor_is_max_when_no_dsc_minted(dsce_deposited, some_user):
+    """Verify health factor returns max uint256 when user has no DSC minted."""
+    health_factor = dsce_deposited.health_factor(some_user)
+    assert health_factor == 2**256 - 1
