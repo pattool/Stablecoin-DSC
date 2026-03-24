@@ -37,7 +37,7 @@ LIQUIDATION_TRESHOLD: public(constant(uint256)) = 50
 LIQUIDATION_PRECISION: public(constant(uint256)) = 100
 LIQUIDATION_BONUS: public(constant(uint256)) = 10
 MIN_HEALTH_FACTOR: public(constant(uint256)) = 1 * (10 ** 18)
-
+STALE_PRICE_DELAY: public(constant(uint256)) = 3600  # 1 hour in seconds
 
 # ------------------------------------------------------------------
 #                            IMMUTABLES
@@ -431,8 +431,10 @@ def _get_usd_value(token: address, amount: uint256) -> uint256:
     @return USD value with 18 decimals
     """
     price_feed: AggregatorV3Interface = AggregatorV3Interface(self.token_to_price_feed[token])
-    price: int256 = staticcall price_feed.latestAnswer()
-    return ((convert(price, uint256) * ADDITIONAL_FEE_PRECISION) * amount) // PRECISION
+    response: (uint256, int256, uint256, uint256, uint256) = staticcall price_feed.latestRoundData()
+    assert (block.timestamp - response[3]) <= STALE_PRICE_DELAY, "DSCEngine: Stale price feed"
+    assert response[1] > 0, "DSCEngine: Invalid price"
+    return ((convert(response[1], uint256) * ADDITIONAL_FEE_PRECISION) * amount) // PRECISION
 
 
 @internal
@@ -446,9 +448,10 @@ def _get_token_amount_from_usd(token: address, usd_amount_in_wei: uint256) -> ui
     @return Token amount
     """
     price_feed: AggregatorV3Interface = AggregatorV3Interface(self.token_to_price_feed[token])
-    price: int256 = staticcall price_feed.latestAnswer()
-    #return (usd_amount_in_wei * PRECISION) // (convert(price, uint256)) * ADDITIONAL_FEE_PRECISION
-    return (usd_amount_in_wei * (10 ** 8)) // (convert(price, uint256))
+    response: (uint256, int256, uint256, uint256, uint256) = staticcall price_feed.latestRoundData()
+    assert (block.timestamp - response[3]) <= STALE_PRICE_DELAY, "DSCEngine: Stale price feed"
+    assert response[1] > 0, "DSCEngine: Invalid price"
+    return (usd_amount_in_wei * (10 ** 8)) // (convert(response[1], uint256))
 
 
 @internal
@@ -479,12 +482,8 @@ def _calculate_health_factor(total_dsc_minted: uint256, total_collateral_value_u
     @param total_collateral_value_usd Total collateral value in USD (18 decimals)
     @return Health factor with 18 decimals (1e18 = 100%)
     """
-    # Only deposited collateral, no minting
-    if total_dsc_minted == 0:
-        return max_value(uint256)
-    # Ratio of DSC minted to collateral value
     collateral_adjusted_for_treshold: uint256 = (total_collateral_value_usd * LIQUIDATION_TRESHOLD) // LIQUIDATION_PRECISION
-    return (collateral_adjusted_for_treshold * PRECISION) // total_dsc_minted
+    return max_value(uint256) if total_dsc_minted == 0 else (collateral_adjusted_for_treshold * PRECISION) // total_dsc_minted
 
 
 @internal

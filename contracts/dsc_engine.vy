@@ -59,6 +59,7 @@ user_to_token_to_amount_deposited: public(HashMap[address, HashMap[address, uint
 user_to_dsc_minted: public(HashMap[address, uint256]) 
 
 owner: public(address)
+pending_owner: public(address)
 paused: public(bool)
 
 
@@ -80,6 +81,14 @@ event Paused:
 
 event Unpaused:
     account: indexed(address)
+
+event OwnershipTransferStarted:
+    previous_owner: indexed(address)
+    new_owner: indexed(address)
+
+event OwnershipTransferred:
+    previous_owner: indexed(address)
+    new_owner: indexed(address)
 
 
 # ------------------------------------------------------------------
@@ -310,6 +319,25 @@ def unpause():
     assert self.paused, "DSCEngine: Not paused" # can't unpause if not paused
     self.paused = False
     log Unpaused(account=msg.sender)
+
+
+@external
+def transfer_ownership(new_owner: address):
+    """Initiate ownership transfer — sets pending_owner only."""
+    self._only_owner()
+    assert new_owner != empty(address), "DSCEngine: Invalid address"
+    self.pending_owner = new_owner
+    log OwnershipTransferStarted(previous_owner=self.owner, new_owner=new_owner)
+
+
+@external
+def accept_ownership():
+    """Complete ownership transfer — must be called by pending_owner."""
+    assert msg.sender == self.pending_owner, "DSCEngine: Not pending owner"
+    previous_owner: address = self.owner
+    self.owner = self.pending_owner
+    self.pending_owner = empty(address)
+    log OwnershipTransferred(previous_owner=previous_owner, new_owner=self.owner)
 
 
 # ------------------------------------------------------------------

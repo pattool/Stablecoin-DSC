@@ -10,7 +10,7 @@ from tests.conftest import COLLATERAL_AMOUNT, AMOUNT_TO_MINT, COLLATERAL_TO_COVE
 
 MIN_HEALTH_FACTOR = to_wei(1, "ether")
 LIQUIDATION_THRESHOLD = 50
-
+ZERO = "0x0000000000000000000000000000000000000000"
 
 # ------------------------------------------------------------------
 #                       CONSTRUCTOR TESTS
@@ -1485,3 +1485,67 @@ def test_health_factor_is_max_when_no_dsc_minted(dsce_deposited, some_user):
     """Verify health factor returns max uint256 when user has no DSC minted."""
     health_factor = dsce_deposited.health_factor(some_user)
     assert health_factor == 2**256 - 1
+
+
+# ------------------------------------------------------------------
+#                 TWO-STEP OWNERSHIP TRANSFER TESTS
+# ------------------------------------------------------------------
+def test_owner_can_initiate_transfer(dsce):
+    """Verify that the owner can initiate an ownership transfer
+    by setting a pending_owner without transferring ownership yet."""
+    new_owner = boa.env.generate_address()
+    with boa.env.prank(dsce.owner()):
+        dsce.transfer_ownership(new_owner)
+    assert dsce.pending_owner() == new_owner
+
+
+def test_pending_owner_can_accept(dsce):
+    """Verify that the pending owner can complete the ownership transfer
+    by calling accept_ownership, updating owner and clearing pending_owner."""
+    new_owner = boa.env.generate_address()
+    with boa.env.prank(dsce.owner()):
+        dsce.transfer_ownership(new_owner)
+    with boa.env.prank(new_owner):
+        dsce.accept_ownership()
+    assert dsce.owner() == new_owner
+    assert dsce.pending_owner() == ZERO
+
+
+def test_non_pending_owner_cannot_accept(dsce):
+    """Verify that a random address cannot accept ownership,
+    preventing unauthorized takeover of the contract."""
+    new_owner = boa.env.generate_address()
+    random_user = boa.env.generate_address()
+    with boa.env.prank(dsce.owner()):
+        dsce.transfer_ownership(new_owner)
+    with boa.env.prank(random_user):
+        with boa.reverts("DSCEngine: Not pending owner"):
+            dsce.accept_ownership()
+
+
+def test_non_owner_cannot_initiate_transfer(dsce, user):
+    """Verify that a non-owner cannot initiate an ownership transfer,
+    ensuring only the current owner can propose a new owner."""
+    new_owner = boa.env.generate_address()
+    with boa.env.prank(user):
+        with boa.reverts("DSCEngine: Not owner"):
+            dsce.transfer_ownership(new_owner)
+
+
+def test_cannot_transfer_to_zero_address(dsce):
+    """Verify that transferring ownership to the zero address reverts,
+    preventing accidental permanent loss of contract ownership."""
+    with boa.env.prank(dsce.owner()):
+        with boa.reverts("DSCEngine: Invalid address"):
+            dsce.transfer_ownership(ZERO)
+
+
+def test_transfer_resets_pending_owner(dsce):
+    """Verify that after ownership is accepted, pending_owner is reset
+    to the zero address, preventing any replay of the transfer."""
+    new_owner = boa.env.generate_address()
+    with boa.env.prank(dsce.owner()):
+        dsce.transfer_ownership(new_owner)
+    with boa.env.prank(new_owner):
+        dsce.accept_ownership()
+    assert dsce.pending_owner() == ZERO
