@@ -273,7 +273,83 @@ class StablecoinFuzzer(RuleBasedStateMachine):
             with pytest.raises(Exception):
                 self.dsce.deposit_collateral(collateral.address, amount)
 
+
+    @rule(
+        collateral_seed=st.integers(min_value=0, max_value=1),
+    )
+    def stale_price_reverts(self, collateral_seed):
+        """Verify that get_usd_value reverts when the price feed is stale,
+        simulating a Chainlink outage by time travelling past the 1 hour threshold."""
         
+        collateral = self._get_collateral_from_seed(collateral_seed)
+        
+        with boa.env.anchor():
+            boa.env.time_travel(seconds=3601)
+            with pytest.raises(Exception):
+                self.dsce.get_usd_value(collateral.address, to_wei(1, "ether"))
+
+
+    @rule(
+    user_seed=st.integers(min_value=0, max_value=USERS_SIZE - 1)
+    )
+    def transfer_ownership_two_step(self, user_seed):
+        """Verify two-step ownership transfer works correctly —
+        pending owner must accept before ownership changes,
+        ensuring no accidental ownership loss."""
+        
+        new_owner = self.users[user_seed]
+        current_owner = self.dsce.owner()
+        
+        with boa.env.prank(current_owner):
+            self.dsce.transfer_ownership(new_owner)
+        
+        assert self.dsce.pending_owner() == new_owner
+        assert self.dsce.owner() == current_owner  # not transferred yet
+        
+        with boa.env.prank(new_owner):
+            self.dsce.accept_ownership()
+        
+        assert self.dsce.owner() == new_owner
+        assert self.dsce.pending_owner() == "0x0000000000000000000000000000000000000000"
+        
+        # Restore original owner for invariant consistency
+        with boa.env.prank(new_owner):
+            self.dsce.transfer_ownership(current_owner)
+        with boa.env.prank(current_owner):
+            self.dsce.accept_ownership()
+    
+    
+    @rule(
+        user_seed=st.integers(min_value=0, max_value=USERS_SIZE - 1),
+        random_seed=st.integers(min_value=0, max_value=USERS_SIZE - 1)
+    )
+    def non_pending_owner_cannot_accept(self, user_seed, random_seed):
+        """Verify that a random user cannot accept ownership
+        when they are not the pending owner, preventing unauthorized takeover."""
+        
+        new_owner = self.users[user_seed]
+        random_user = self.users[random_seed]
+        
+        assume(random_user != new_owner)
+        
+        current_owner = self.dsce.owner()
+        
+        with boa.env.prank(current_owner):
+            self.dsce.transfer_ownership(new_owner)
+        
+        with boa.env.prank(random_user):
+            with pytest.raises(Exception):
+                self.dsce.accept_ownership()
+        
+        # Restore state — complete the transfer then give back to original owner
+        with boa.env.prank(new_owner):
+            self.dsce.accept_ownership()
+        with boa.env.prank(new_owner):
+            self.dsce.transfer_ownership(current_owner)
+        with boa.env.prank(current_owner):
+            self.dsce.accept_ownership()    
+
+    
     # Invariant: Protocol must have more value in collateral than total supply.    
     @invariant()
     def protocol_must_have_more_value_than_total_supply(self):
