@@ -20,14 +20,19 @@
 4. Liquidation function - Allow others to liquidate unhealthy positions
 5. Price oracle - Get current ETH price (critical!)
 
-## Security Features
+## Security Features Implemented - Update
 
-### Implemented
 - **Emergency Pause Mechanism** - Owner can pause all state-changing operations in case of emergency.
 - **Chainlink Price Feed Staleness Check** - Reject stale oracle prices to prevent manipulation during feed outages.
-
-### Planned
 - **Two-step Ownership Transfer** - Prevent accidental loss of contract ownership by requiring the new owner to accept.
+
+## New Features Implemented - Update
+
+
+
+
+
+## Planned New Features
 - **Liquidation Incentive Scaling** - Dynamic liquidation bonus based on how far below the health factor a position is.
 - **Minting Fee** - Charge a small protocol fee on DSC minting to create a sustainable revenue model.
 - **Support for More Collateral Tokens** - Extend beyond 2 collateral types using dynamic arrays.

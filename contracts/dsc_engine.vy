@@ -1,4 +1,4 @@
-# pragma version ==0.4.1
+# pragma version 0.4.1
 
 # ------------------------------------------------------------------
 #                             NATSPEC
@@ -35,7 +35,11 @@ ADDITIONAL_FEE_PRECISION: public(constant(uint256)) = 1 * (10 ** 10)
 PRECISION: public(constant(uint256)) = 1 * (10 ** 18)
 LIQUIDATION_TRESHOLD: public(constant(uint256)) = 50
 LIQUIDATION_PRECISION: public(constant(uint256)) = 100
-LIQUIDATION_BONUS: public(constant(uint256)) = 10
+
+MIN_LIQUIDATION_BONUS: public(constant(uint256)) = 10
+MID_LIQUIDATION_BONUS: public(constant(uint256)) = 15
+MAX_LIQUIDATION_BONUS: public(constant(uint256)) = 20
+
 MIN_HEALTH_FACTOR: public(constant(uint256)) = 1 * (10 ** 18)
 STALE_PRICE_DELAY: public(constant(uint256)) = 3600  # 1 hour in seconds
 
@@ -58,8 +62,11 @@ user_to_token_to_amount_deposited: public(HashMap[address, HashMap[address, uint
 # Track each user's debt (how much DSC they owe)
 user_to_dsc_minted: public(HashMap[address, uint256]) 
 
+# State Ownership
 owner: public(address)
 pending_owner: public(address)
+
+# State Pause
 paused: public(bool)
 
 
@@ -302,7 +309,9 @@ def get_collateral_balance_of_user(user: address, token_collateral: address) -> 
     return self.user_to_token_to_amount_deposited[user][token_collateral]
 
 
-# --- Pause functions ---
+# ------------------------------------------------------------------
+#                    UPDATE EXTERNAL FUNCTIONS
+# ------------------------------------------------------------------
 @external
 def pause():
     """Pause the contract, blocking deposits, mints and liquidations."""
@@ -529,6 +538,9 @@ def _burn_dsc(amount: uint256, on_behalf_of: address, dsc_from: address):
     extcall DSC.burn_from(dsc_from, amount)
 
 
+# ------------------------------------------------------------------
+#                    UPDATE INTERNAL FUNCTIONS
+# ------------------------------------------------------------------
 @internal
 def _only_owner():
     assert msg.sender == self.owner, "DSCEngine: Not owner"
@@ -537,3 +549,21 @@ def _only_owner():
 @internal
 def _not_paused():  # NEW
     assert not self.paused, "DSCEngine: Contract is paused"
+
+
+@internal
+@view
+def _get_liquidation_bonus(health_factor: uint256) -> uint256:
+    """
+    @notice Returns the liquidation bonus based on how far below
+    the minimum health factor a position is.
+    @dev Stepped scaling: higher risk = higher bonus, capped at 20%
+    @param health_factor The current health factor of the position
+    @return Liquidation bonus percentage (10, 15, or 20)
+    """
+    if health_factor >= 8 * 10 ** 17:  # >= 0.8
+        return MIN_LIQUIDATION_BONUS
+    elif health_factor >= 5 * 10 ** 17:  # >= 0.5
+        return MID_LIQUIDATION_BONUS
+    else:
+        return MAX_LIQUIDATION_BONUS
