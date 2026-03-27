@@ -1,4 +1,4 @@
-# pragma version ==0.4.1
+# pragma version 0.4.1
 
 # ------------------------------------------------------------------
 #                             NATSPEC
@@ -58,7 +58,11 @@ user_to_token_to_amount_deposited: public(HashMap[address, HashMap[address, uint
 # Track each user's debt (how much DSC they owe)
 user_to_dsc_minted: public(HashMap[address, uint256]) 
 
+# State Ownership
 owner: public(address)
+pending_owner: public(address)
+
+# State Pause
 paused: public(bool)
 
 
@@ -80,6 +84,14 @@ event Paused:
 
 event Unpaused:
     account: indexed(address)
+
+event OwnershipTransferStarted:
+    previous_owner: indexed(address)
+    new_owner: indexed(address)
+
+event OwnershipTransferred:
+    previous_owner: indexed(address)
+    new_owner: indexed(address)
 
 
 # ------------------------------------------------------------------
@@ -293,7 +305,9 @@ def get_collateral_balance_of_user(user: address, token_collateral: address) -> 
     return self.user_to_token_to_amount_deposited[user][token_collateral]
 
 
-# --- Pause functions ---
+# ------------------------------------------------------------------
+#                    UPDATE EXTERNAL FUNCTIONS
+# ------------------------------------------------------------------
 @external
 def pause():
     """Pause the contract, blocking deposits, mints and liquidations."""
@@ -310,6 +324,25 @@ def unpause():
     assert self.paused, "DSCEngine: Not paused" # can't unpause if not paused
     self.paused = False
     log Unpaused(account=msg.sender)
+
+
+@external
+def transfer_ownership(new_owner: address):
+    """Initiate ownership transfer — sets pending_owner only."""
+    self._only_owner()
+    assert new_owner != empty(address), "DSCEngine: Invalid address"
+    self.pending_owner = new_owner
+    log OwnershipTransferStarted(previous_owner=self.owner, new_owner=new_owner)
+
+
+@external
+def accept_ownership():
+    """Complete ownership transfer — must be called by pending_owner."""
+    assert msg.sender == self.pending_owner, "DSCEngine: Not pending owner"
+    previous_owner: address = self.owner
+    self.owner = self.pending_owner
+    self.pending_owner = empty(address)
+    log OwnershipTransferred(previous_owner=previous_owner, new_owner=self.owner)
 
 
 # ------------------------------------------------------------------
@@ -501,6 +534,9 @@ def _burn_dsc(amount: uint256, on_behalf_of: address, dsc_from: address):
     extcall DSC.burn_from(dsc_from, amount)
 
 
+# ------------------------------------------------------------------
+#                    UPDATE INTERNAL FUNCTIONS
+# ------------------------------------------------------------------
 @internal
 def _only_owner():
     assert msg.sender == self.owner, "DSCEngine: Not owner"

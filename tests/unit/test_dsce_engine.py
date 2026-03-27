@@ -1239,7 +1239,7 @@ def test_liquidation_payout_is_correct(
     print(f"   WETH Gained: {weth_gained / 10**18:.18f} WETH")
 
     # Calculate expected payout
-    liquidation_bonus = dsce_liquidated.LIQUIDATION_BONUS()
+    liquidation_bonus = dsce_liquidated.MIN_LIQUIDATION_BONUS()
     debt_covered_in_weth = dsce_liquidated.get_token_amount_from_usd(weth.address, AMOUNT_TO_MINT)
     bonus_weth = debt_covered_in_weth // liquidation_bonus
     expected_weth = debt_covered_in_weth + bonus_weth
@@ -1549,3 +1549,58 @@ def test_transfer_resets_pending_owner(dsce):
     with boa.env.prank(new_owner):
         dsce.accept_ownership()
     assert dsce.pending_owner() == ZERO
+
+
+# ------------------------------------------------------------------
+#                 DYNAMIC LIQUIDATION BONUS TESTS
+# ------------------------------------------------------------------
+def test_liquidation_bonus_is_min_when_hf_above_0_8(dsce, weth, eth_usd, some_user):
+    """Verify that the liquidation bonus is 10% (minimum)
+    when the health factor is at or above 0.8."""
+    
+    with boa.env.prank(some_user):
+        weth.approve(dsce.address, COLLATERAL_AMOUNT)
+        dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+
+    # Drop price to get HF just below 1 but above 0.8
+    # 10 ETH * $18 = $180 collateral, $90 adjusted, HF = 0.9
+    eth_usd.updateAnswer(18 * 10**8)
+    
+    health_factor = dsce.health_factor(some_user)
+    assert health_factor >= 8 * 10**17  # >= 0.8
+    assert dsce.MIN_LIQUIDATION_BONUS() == 10
+
+
+def test_liquidation_bonus_is_mid_when_hf_between_0_5_and_0_8(dsce, weth, eth_usd, some_user):
+    """Verify that the liquidation bonus is 15% (mid)
+    when the health factor is between 0.5 and 0.8."""
+    
+    with boa.env.prank(some_user):
+        weth.approve(dsce.address, COLLATERAL_AMOUNT)
+        dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+
+    # Drop price to get HF between 0.5 and 0.8
+    # 10 ETH * $10 = $100 collateral, $50 adjusted, HF = 0.5
+    eth_usd.updateAnswer(10 * 10**8)
+    
+    health_factor = dsce.health_factor(some_user)
+    assert health_factor >= 5 * 10**17  # >= 0.5
+    assert health_factor < 8 * 10**17   # < 0.8
+    assert dsce.MID_LIQUIDATION_BONUS() == 15
+
+
+def test_liquidation_bonus_is_max_when_hf_below_0_5(dsce, weth, eth_usd, some_user):
+    """Verify that the liquidation bonus is 20% (maximum)
+    when the health factor is below 0.5."""
+    
+    with boa.env.prank(some_user):
+        weth.approve(dsce.address, COLLATERAL_AMOUNT)
+        dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+
+    # Drop price to get HF below 0.5
+    # 10 ETH * $8 = $80 collateral, $40 adjusted, HF = 0.4
+    eth_usd.updateAnswer(8 * 10**8)
+    
+    health_factor = dsce.health_factor(some_user)
+    assert health_factor < 5 * 10**17  # < 0.5
+    assert dsce.MAX_LIQUIDATION_BONUS() == 20
