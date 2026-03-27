@@ -222,7 +222,8 @@ def liquidate(collateral: address, user: address, debt_to_cover: uint256):
     assert starting_health_factor < MIN_HEALTH_FACTOR, "DSCEngine: Health factor is good"
 
     token_amount_from_debt_covered: uint256 = self._get_token_amount_from_usd(collateral, debt_to_cover)
-    bonus_collateral: uint256 = (token_amount_from_debt_covered * LIQUIDATION_BONUS) // LIQUIDATION_PRECISION
+    liquidation_bonus: uint256 = self._get_liquidation_bonus(starting_health_factor)
+    bonus_collateral: uint256 = (token_amount_from_debt_covered * liquidation_bonus) // LIQUIDATION_PRECISION
 
     self._redeem_collateral(collateral, token_amount_from_debt_covered + bonus_collateral, user, msg.sender)
     self._burn_dsc(debt_to_cover, user, msg.sender)
