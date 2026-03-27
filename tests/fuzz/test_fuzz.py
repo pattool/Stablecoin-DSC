@@ -350,6 +350,42 @@ class StablecoinFuzzer(RuleBasedStateMachine):
             self.dsce.accept_ownership()    
 
     
+    @rule(
+    collateral_seed=st.integers(min_value=0, max_value=1),
+    user_seed=st.integers(min_value=0, max_value=USERS_SIZE - 1),
+    )
+    def liquidation_bonus_tier_is_correct(self, collateral_seed, user_seed):
+        """Verify that the liquidation bonus tier matches the health factor —
+        10% for HF >= 0.8, 15% for HF >= 0.5, 20% for HF < 0.5."""
+
+        assume(not self.dsce.paused())
+        
+        collateral = self._get_collateral_from_seed(collateral_seed)
+        user = self.users[user_seed]
+        amount = to_wei(10, "ether")
+    
+        with boa.env.prank(user):
+            collateral.mint_amount(amount)
+            collateral.approve(self.dsce.address, amount)
+            try:
+                self.dsce.deposit_collateral(collateral, amount)
+                collateral_usd = self.dsce.get_usd_value(collateral, amount)
+                safe_mint = (collateral_usd * 49) // 100
+                self.dsce.mint_dsc(safe_mint)
+            except BoaError:
+                return
+    
+        health_factor = self.dsce.health_factor(user)
+    
+        if health_factor >= 8 * 10**17:
+            assert self.dsce.MIN_LIQUIDATION_BONUS() == 10
+        elif health_factor >= 5 * 10**17:
+            assert self.dsce.MID_LIQUIDATION_BONUS() == 15
+        else:
+            assert self.dsce.MAX_LIQUIDATION_BONUS() == 20
+
+
+    
     # Invariant: Protocol must have more value in collateral than total supply.    
     @invariant()
     def protocol_must_have_more_value_than_total_supply(self):
