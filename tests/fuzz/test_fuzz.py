@@ -353,8 +353,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
     @rule(
     collateral_seed=st.integers(min_value=0, max_value=1),
     user_seed=st.integers(min_value=0, max_value=USERS_SIZE - 1),
+    price_drop_seed=st.integers(min_value=0, max_value=2),
     )
-    def liquidation_bonus_tier_is_correct(self, collateral_seed, user_seed):
+    def liquidation_bonus_tier_is_correct(self, collateral_seed, user_seed, price_drop_seed):
         """Verify that the liquidation bonus tier matches the health factor —
         10% for HF >= 0.8, 15% for HF >= 0.5, 20% for HF < 0.5."""
 
@@ -374,7 +375,15 @@ class StablecoinFuzzer(RuleBasedStateMachine):
                 self.dsce.mint_dsc(safe_mint)
             except BoaError:
                 return
-    
+
+        # Drop price to force different HF tiers
+        price_feed = MockV3Aggregator.at(self.dsce.token_to_price_feed(collateral.address))
+        current_price = price_feed.latestAnswer()
+        
+        # seed 0 → MIN tier (drop 5%),  seed 1 → MID tier (drop 40%), seed 2 → MAX tier (drop 60%)
+        drop = [0.95, 0.60, 0.40][price_drop_seed]
+        price_feed.updateAnswer(int(current_price * drop))
+        
         health_factor = self.dsce.health_factor(user)
     
         if health_factor >= 8 * 10**17:
@@ -384,7 +393,9 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         else:
             assert self.dsce.MAX_LIQUIDATION_BONUS() == 20
 
-
+        # Restore price
+        price_feed.updateAnswer(current_price)
+    
     
     # Invariant: Protocol must have more value in collateral than total supply.    
     @invariant()
@@ -400,6 +411,10 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         wbtc_value = self.dsce.get_usd_value(self.wbtc, wbtc_deposited)
 
         assert (weth_value + wbtc_value) >= total_supply
+
+
+    
+
 
     
     def _get_collateral_from_seed(self, seed):
