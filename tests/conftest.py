@@ -129,6 +129,32 @@ def dsce_liquidated(
     return dsce_minted
 
 
+@pytest.fixture(scope="function")
+def dsce_liquidated_mid(
+    starting_liquidator_weth_balance,
+    dsce_minted,
+    weth,
+    dsc,
+    some_user,
+    liquidator,
+    eth_usd,
+):
+    """Fixture with ETH at $12 — health factor ~0.6, hitting MID bonus tier (15%)."""
+    eth_usd_updated_price = 12 * 10**8
+    eth_usd.updateAnswer(eth_usd_updated_price)
+
+    with boa.env.prank(liquidator):
+        weth.mock_mint()
+        weth.approve(dsce_minted, COLLATERAL_TO_COVER)
+        dsce_minted.deposit_and_mint(
+            weth, COLLATERAL_TO_COVER, AMOUNT_TO_MINT
+        )
+        dsc.approve(dsce_minted, AMOUNT_TO_MINT)
+        dsce_minted.liquidate(weth, some_user, AMOUNT_TO_MINT)
+
+    return dsce_minted
+
+
 @pytest.fixture(scope="function") 
 def paused_dsce(dsc, dsce):
     """Return a DSCEngine instance in paused state."""
@@ -136,10 +162,3 @@ def paused_dsce(dsc, dsce):
         dsce.pause()
     return dsce
 
-
-@pytest.fixture(scope="function")
-def paused_dsce_deposited(dsce_deposited, dsce):
-    """Return a deposited DSCEngine instance in paused state."""
-    with boa.env.prank(dsce.owner()):
-        dsce.pause()
-    return dsce

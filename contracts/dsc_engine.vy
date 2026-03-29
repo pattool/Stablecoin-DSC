@@ -568,3 +568,5 @@ def _get_liquidation_bonus(health_factor: uint256) -> uint256:
         return MID_LIQUIDATION_BONUS
     else:
         return MAX_LIQUIDATION_BONUS
+
+    
