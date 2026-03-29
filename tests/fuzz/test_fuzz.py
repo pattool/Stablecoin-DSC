@@ -412,10 +412,6 @@ class StablecoinFuzzer(RuleBasedStateMachine):
 
         assert (weth_value + wbtc_value) >= total_supply
 
-
-    
-
-
     
     def _get_collateral_from_seed(self, seed):
         """Return WETH for seed 0 or WBTC for any other seed,

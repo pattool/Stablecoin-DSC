@@ -1604,3 +1604,33 @@ def test_liquidation_bonus_is_max_when_hf_below_0_5(dsce, weth, eth_usd, some_us
     health_factor = dsce.health_factor(some_user)
     assert health_factor < 5 * 10**17  # < 0.5
     assert dsce.MAX_LIQUIDATION_BONUS() == 20
+
+
+def test_liquidation_payout_is_correct_mid_tier(
+    starting_liquidator_weth_balance, dsce_liquidated_mid, weth, liquidator, eth_usd
+):
+    """Verify that liquidator receives correct collateral including 15% bonus
+    when health factor is between 0.5 and 0.8 (MID tier)."""
+    
+    liquidator_weth_balance = weth.balanceOf(liquidator)
+    debt_covered_in_weth = dsce_liquidated_mid.get_token_amount_from_usd(
+        weth.address, AMOUNT_TO_MINT
+    )
+    bonus_weth = (debt_covered_in_weth * dsce_liquidated_mid.MID_LIQUIDATION_BONUS()) // 100
+    expected_weth = debt_covered_in_weth + bonus_weth
+
+    assert liquidator_weth_balance == expected_weth
+
+
+def test_get_liquidation_bonus_mid_tier(dsce):
+    """Verify _get_liquidation_bonus returns 15 for HF between 0.5 and 0.8."""
+    health_factor = 6 * 10**17  # 0.6
+    bonus = dsce.internal._get_liquidation_bonus(health_factor)
+    assert bonus == dsce.MID_LIQUIDATION_BONUS()
+
+
+def test_get_liquidation_bonus_max_tier(dsce):
+    """Verify _get_liquidation_bonus returns 20 for HF below 0.5."""
+    health_factor = 4 * 10**17  # 0.4
+    bonus = dsce.internal._get_liquidation_bonus(health_factor)
+    assert bonus == dsce.MAX_LIQUIDATION_BONUS()
