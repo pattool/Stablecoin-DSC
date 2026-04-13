@@ -1,100 +1,143 @@
-# Moccasin Project
+# Decentralized Stablecoin (DSC) — Vyper / Moccasin
 
-🐍 Welcome to the Decentralized Stablecoin (DSC) project!
+A decentralized, algorithmic stablecoin protocol built in **Vyper 0.4.1** using the **Moccasin** framework.  
+Inspired by MakerDAO/DAI. Extended and hardened with additional security features beyond the original course material.
 
-## What we want to do:
-1. Users can deposit $200 of ETH.
-   
-2. They can then mint $50 of Stablecoin.
-   1. This means they will have a 4/1 ratio of collateral to stablecoin (200 / 50 = 4 -> ratio 4/1)
-   2. We will set a required collateral ratio of 2/1
-    
-3. If the price of ETH drops, for example to $50, others
-   should be able to liquidate those users!
+---
 
-## Smart Contract Components Needed:
+## Overview
 
-1. Deposit function - Lock collateral
-2. Mint function - Issue stablecoin (if collateral ratio > 200%)
-3. Health check - Calculate current collateral ratio
-4. Liquidation function - Allow others to liquidate unhealthy positions
-5. Price oracle - Get current ETH price (critical!)
+Users deposit crypto collateral (WETH or WBTC) to mint DSC, a USD-pegged stablecoin.  
+The protocol enforces a minimum 200% collateralization ratio. Undercollateralized positions can be liquidated by anyone.
 
-## Security Features Implemented - Update
+- **Collateral:** Exogenous (WETH, WBTC)
+- **Stability Mechanism:** Algorithmic / Decentralized
+- **Peg:** USD (via Chainlink price feeds)
 
-- **Emergency Pause Mechanism** - Owner can pause all state-changing operations in case of emergency.
-- **Chainlink Price Feed Staleness Check** - Reject stale oracle prices to prevent manipulation during feed outages.
-- **Two-step Ownership Transfer** - Prevent accidental loss of contract ownership by requiring the new owner to accept.
+---
 
-## Features Implemented - Update
-- **Liquidation Incentive Scaling** - Dynamic liquidation bonus based on how far below the health factor a position is.
+## How It Works
 
+1. Deposit WETH or WBTC as collateral
+2. Mint DSC up to 50% of your collateral value (200% collateralization ratio)
+3. If your health factor drops below 1.0, your position becomes liquidatable
+4. Liquidators repay your debt and receive your collateral plus a bonus
 
-## Planned New Features
+---
 
-- **Minting Fee** - Charge a small protocol fee on DSC minting to create a sustainable revenue model.
-- **Support for More Collateral Tokens** - Extend beyond 2 collateral types using dynamic arrays.
-- **Interest Rate on Minted DSC** - Accumulate continuous debt over time, similar to MakerDAO's stability fee.
+## Smart Contracts
 
+| Contract | Description |
+|---|---|
+| `decentralized_stable_coin.vy` | ERC20 DSC token using Snekmate libraries |
+| `dsc_engine.vy` | Core protocol engine: deposits, minting, liquidations, security |
+
+---
+
+## Security Features
+
+- **Emergency Pause** — Owner can halt all state-changing operations instantly
+- **Chainlink Staleness Check** — Rejects price data older than 1 hour
+- **Invalid Price Check** — Rejects zero or negative price feed responses
+- **Two-Step Ownership Transfer** — Prevents accidental loss of contract ownership; new owner must explicitly accept
+- **Health Factor Enforcement** — Every mint and redemption checks collateralization ratio
+
+---
+
+## Protocol Features
+
+- **Dynamic Liquidation Bonus** — Bonus scales with risk:
+  - Health Factor ≥ 0.8 → **10% bonus**
+  - Health Factor ≥ 0.5 → **15% bonus**
+  - Health Factor < 0.5 → **20% bonus**
+- **Deposit & Mint in one transaction** — Gas efficient combined operation
+- **Redeem & Burn in one transaction** — Full exit in a single call
+
+---
+
+## Tech Stack
+
+| Tool | Purpose |
+|---|---|
+| Vyper 0.4.1 | Smart contract language |
+| Moccasin (mox) | Vyper framework (deployment, testing) |
+| Titanoboa | EVM interpreter for Python-native testing |
+| Chainlink | On-chain price feeds (ETH/USD, BTC/USD) |
+| Snekmate | Audited Vyper libraries (ERC20, Ownable) |
+| Hypothesis | Property-based fuzz testing |
+
+---
+
+## Test Suite
+
+- **Unit tests** — Full coverage of all contract functions and edge cases
+- **Fuzz tests** — Stateful property-based testing with Hypothesis
+- **Coverage** — 97% on `dsc_engine.vy`
+
+Key fuzz invariant tested:  
+> *The total USD value of collateral held by the protocol must always be ≥ the total DSC supply.*
+
+---
+
+## Planned Features
+
+- **Minting Fee** — Small protocol fee on DSC minting
+- **Support for More Collateral Tokens** — Extend beyond 2 tokens using dynamic arrays
+- **Interest Rate on Minted DSC** — Continuous debt accumulation (similar to MakerDAO stability fee)
+
+---
 
 ## Installation
 
-1. git clone https://github.com/pattool/Stablecoin-DSC
-2. cd mox-stablecoin-cu
-3. mox install
+```bash
+git clone https://github.com/pattool/Stablecoin-DSC
+cd mox-stablecoin-cu
+mox install
+```
 
+If you need a virtual environment:
 
-- #### If you have an issue to run it, install virtual environment uv.
-    - uv, is an extremely fast Python package and project manager, written in Rust.
-          
-- #### On macOS and Linux:
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-       
-        - Once install follow the next steps:
-           - 1 uv venv
-           - 2 uv sync
-           - 3 source .venv/bin/activate
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv
+uv sync
+source .venv/bin/activate
+```
 
-- #### On Windows:
-        powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```powershell
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
 
-- #### Documentation:
-        - uv's documentation is available at docs.astral.sh/uv.
-        - Additionally, the command line reference documentation can be viewed with uv help.
-
+---
 
 ## Quickstart
 
-1. Deploy to a fake local network that titanoboa automatically spins up!
-
 ```bash
+# Deploy locally
 mox run deploy
-```
 
-2. Compile
-
-```
+# Compile
 mox compile
-```
 
-3. Run tests
-
-```
+# Run tests
 mox test
 
-mox test -s (with print statements)
+# Run tests with print output
+mox test -s
+
+# Run a specific test
+mox test -k test_name -s
 ```
 
-_For documentation, please run `mox --help` or visit [the Moccasin documentation](https://cyfrin.github.io/moccasin)_
-
+---
 
 ## License
 
-uv is licensed under either of
+This project is licensed under either of
 
-    - Apache License, Version 2.0, (LICENSE-APACHE or 
-      https://www.apache.org/licenses/LICENSE-2.0)
-    - MIT license (LICENSE-MIT or https://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 ([LICENSE-APACHE](https://www.apache.org/licenses/LICENSE-2.0))
+- MIT license ([LICENSE-MIT](https://opensource.org/licenses/MIT))
+
 at your option.
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in uv by you, as defined in the Apache-2.0 license, shall be dually licensed as above, without any additional terms or conditions.

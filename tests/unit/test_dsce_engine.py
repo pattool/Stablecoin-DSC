@@ -65,7 +65,7 @@ def test_reverts_if_token_length_doesnt_match_price_feeds(
     
     print("="*70 + "\n")
     
-## Short version   
+### Short version   
 #def test_reverts_if_token_length_doesnt_match_price_feeds(
 #    dsc, eth_usd, btc_usd, weth, wbtc
 #):
@@ -74,7 +74,9 @@ def test_reverts_if_token_length_doesnt_match_price_feeds(
 #    try:
 #        with pytest.raises(EncodeError):
 #            dsc_engine.deploy([wbtc, weth, weth], [eth_usd, btc_usd], dsc.address)
-#    
+#        print(f"   ✅ SUCCESS: Deployment correctly failed with EncodeError")
+#        print(f"   The contract properly rejected mismatched array lengths")
+#        
 #    except Exception as e:
 #        print(f"   ❌ UNEXPECTED ERROR: {type(e).__name__}: {e}")
 #        raise
@@ -264,6 +266,9 @@ def test_reverts_if_collateral_zero(some_user, weth, dsce):
 #            print(f"   Error Type: {type(e).__name__}")
 #            print(f"   Error Message: {str(e)}")
 #            raise
+#
+#    print(f"\n✅ SUCCESS: Transaction correctly reverted!")
+#    print(f"   The contract properly rejected zero collateral")
 
 
 def test_reverts_with_unapproved_collateral(some_user, dsce):
@@ -317,7 +322,6 @@ def test_reverts_with_unapproved_collateral(some_user, dsce):
             
     print("="*70 + "\n")
     
-
 ## Short version
 #def test_reverts_with_unapproved_collateral(some_user, dsce):
 #    """Test that depositing an unapproved/unsupported token reverts"""
