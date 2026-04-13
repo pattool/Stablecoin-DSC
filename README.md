@@ -1,7 +1,7 @@
 # Decentralized Stablecoin (DSC) — Vyper / Moccasin
 
 A decentralized, algorithmic stablecoin protocol built in **Vyper 0.4.1** using the **Moccasin** framework.  
-Inspired by MakerDAO/DAI. Extended and hardened with additional security features beyond the original course material.
+Inspired by MakerDAO/DAI. Extended and hardened with additional security features beyond the original course material from Cyfrin Updraft.
 
 ---
 
