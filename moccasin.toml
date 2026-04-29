@@ -28,52 +28,64 @@ is_zksync = false
 url = "http://127.0.0.1:8545"
 prompt_live = false
 save_to_db = false
+default_account_name = "anvil1"
 chain_id = 31337
 
 
+[networks.sepolia-fork]
+url = "$SEPOLIA_RPC_URL" # RPC from Alchemy
+default_account_name = "default1"
+save_to_db = false
+chain_id = 11155111
+prompt_live = false
+explorer_uri = "https://eth-sepolia.blockscout.com/"
+explorer_type = "blockscout"
+fork = true
+
+
 [networks.zksync-sepolia]
-url = "https://sepolia.era.zksync.dev"
+#url = "https://sepolia.era.zksync.dev"
+url = "$ZKSYNC_SEPOLIA_RPC_URL" # RPC from Alchemy
 chain_id = 300
 is_zksync = true
 prompt_live = true
-
-
-[networks.zksync-fork]
-url = "$ZKSYNC_RPC_URL"
-chain_id = 324
-is_zksync = true
-prompt_live = true
-fork = true
 explorer_type = "zksyncexplorer"
-explorer_url = "https://zksync2-mainnet-explorer.zksync.io"
+explorer_url = "https://explorer.sepolia.era.zksync.dev"
+default_account_name = "default1"
 
 
-[networks.sepolia-fork]
-url = "$SEPOLIA_RPC_URL"
-chain_id = 11155111
-prompt_live = false
-fork = true
+
+#[networks.zksync-fork]
+#url = "$ZKSYNC_RPC_URL"
+#chain_id = 324
+#is_zksync = true
+#prompt_live = true
+#fork = true
+#explorer_type = "zksyncexplorer"
+#explorer_url = "https://zksync2-mainnet-explorer.zksync.io"
+
+
 # ------------------------------------------------------------------
 #                       NETWORK CONTRACTS
 # ------------------------------------------------------------------
-#[networks.zksync-sepolia.contracts]
-#eth_usd_price_feed = { address = "0xfEefF7c3fB57d18C5C6Cdd71e45D2D0b4F9377bF" }
-#btc_usd_price_feed = { address = "0x95Bc57e794aeb02E4a16eff406147f3ce2531F83" }
-#weth = { address = "0xdd13E55209Fd76AfE204dBda4007C227904f0a81" }
-#wbtc = { address = "0xE544cAd11e108775399358Bd0790bb72c9e3AD9E" }
 
 
-[networks.zksync.contracts]
-eth_usd_price_feed = { address = "0x6D41d1dc818112880b40e26BD6FD347E41008eDA" }
-btc_usd_price_feed = { address = "0x4Cba285c15e3B540C474A114a7b135193e4f1EA6" }
-weth = { address = "0xf00DAD97284D0c6F06dc4Db3c32454D4292c6813" }
-wbtc = { address = "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011" }
+#[networks.mainnet-fork.contracts]
+#weth = {address = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"}
+#wbtc = {address = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"}
+
+
+[networks.zksync-sepolia.contracts]
+eth_usd_price_feed = { address = "0xfEefF7c3fB57d18C5C6Cdd71e45D2D0b4F9377bF" }
+btc_usd_price_feed = { address = "0x95Bc57e794aeb02E4a16eff406147f3ce2531F83" }
+weth = { address = "0xdd13E55209Fd76AfE204dBda4007C227904f0a81" }
+wbtc = { address = "0xE544cAd11e108775399358Bd0790bb72c9e3AD9E" }
+
+
+#[networks.zksync.contracts]
+#eth_usd_price_feed = { address = "0x6D41d1dc818112880b40e26BD6FD347E41008eDA" }
+#btc_usd_price_feed = { address = "0x4Cba285c15e3B540C474A114a7b135193e4f1EA6" }
+#weth = { address = "0xf00DAD97284D0c6F06dc4Db3c32454D4292c6813" }
+#wbtc = { address = "0xBBeB516fb02a01611cBBE0453Fe3c580D7281011" }
 # You can view all configuration options at https://cyfrin.github.io/moccasin/all_moccasin_toml_parameters.html
 
-
-
-[project]
-src = "contracts"
-out = "out"
-dot_env = ".env"
-dependencies = ["snekmate==0.1.1"]
