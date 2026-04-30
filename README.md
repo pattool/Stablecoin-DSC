@@ -52,7 +52,8 @@ The protocol enforces a minimum 200% collateralization ratio. Undercollateralize
   - Health Factor < 0.5 → **20% bonus**
 - **Deposit & Mint in one transaction** — Gas efficient combined operation
 - **Redeem & Burn in one transaction** — Full exit in a single call
-
+- **Minting Fee** — Small protocol fee on DSC minting
+  
 ---
 
 ## Tech Stack
@@ -81,7 +82,6 @@ Key fuzz invariant tested:
 
 ## Planned Features
 
-- **Minting Fee** — Small protocol fee on DSC minting
 - **Support for More Collateral Tokens** — Extend beyond 2 tokens using dynamic arrays
 - **Interest Rate on Minted DSC** — Continuous debt accumulation (similar to MakerDAO stability fee)
 
