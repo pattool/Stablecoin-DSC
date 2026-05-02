@@ -43,6 +43,9 @@ MAX_LIQUIDATION_BONUS: public(constant(uint256)) = 20
 MIN_HEALTH_FACTOR: public(constant(uint256)) = 1 * (10 ** 18)
 STALE_PRICE_DELAY: public(constant(uint256)) = 3600  # 1 hour in seconds
 
+MINTING_FEE_BPS: public(constant(uint256)) = 50  # 0.5% fee (50 basis points)
+
+
 # ------------------------------------------------------------------
 #                            IMMUTABLES
 # ------------------------------------------------------------------
@@ -68,6 +71,9 @@ pending_owner: public(address)
 
 # State Pause
 paused: public(bool)
+
+# Fees
+protocol_fees_collected: public(uint256)
 
 
 # ------------------------------------------------------------------
@@ -96,6 +102,10 @@ event OwnershipTransferStarted:
 event OwnershipTransferred:
     previous_owner: indexed(address)
     new_owner: indexed(address)
+
+event MintingFeePaid:
+    user: indexed(address)
+    fee: indexed(uint256)
 
 
 # ------------------------------------------------------------------
@@ -350,6 +360,19 @@ def accept_ownership():
     log OwnershipTransferred(previous_owner=previous_owner, new_owner=self.owner)
 
 
+@external
+def collect_fees():
+    """
+    @notice Allows the owner to mint and collect accumulated protocol fees.
+    @dev Resets protocol_fees_collected to zero before minting to prevent re-entrancy.
+    """
+    self._only_owner()
+    fees: uint256 = self.protocol_fees_collected
+    assert fees > 0, "DSCEngine: No fees to collect"
+    self.protocol_fees_collected = 0
+    extcall DSC.mint(self.owner, fees)
+
+
 # ------------------------------------------------------------------
 #                        INTERNAL FUNCTIONS
 # ------------------------------------------------------------------
@@ -400,21 +423,21 @@ def _redeem_collateral(token_collateral_address: address, amount: uint256, _from
     assert success, "DSCEngine: Transfer failed"
 
 
-@internal
-def _mint_dsc(amount_dsc_to_mint: uint256):
-    """
-    @notice Internal function to mint DSC tokens
-    @dev Updates user's minted balance, checks health factor, then mints tokens
-    @param amount_dsc_to_mint Amount of DSC to mint
-    """
-    assert amount_dsc_to_mint > 0, "DSCEngine: Needs more than zero"
-    self.user_to_dsc_minted[msg.sender] += amount_dsc_to_mint
-
-    # Revert't mint_dsc if ratio is broken
-    self._revert_if_health_factor_broken(msg.sender)
-
-    # Need i_decentralized_stable_coin to call mint
-    extcall DSC.mint(msg.sender, amount_dsc_to_mint)
+#@internal
+#def _mint_dsc(amount_dsc_to_mint: uint256):
+#    """
+#    @notice Internal function to mint DSC tokens
+#    @dev Updates user's minted balance, checks health factor, then mints tokens
+#    @param amount_dsc_to_mint Amount of DSC to mint
+#    """
+#    assert amount_dsc_to_mint > 0, "DSCEngine: Needs more than zero"
+#    self.user_to_dsc_minted[msg.sender] += amount_dsc_to_mint
+#
+#    # Revert't mint_dsc if ratio is broken
+#    self._revert_if_health_factor_broken(msg.sender)
+#
+#    # Need i_decentralized_stable_coin to call mint
+#    extcall DSC.mint(msg.sender, amount_dsc_to_mint)
 
 
 @internal
@@ -569,4 +592,26 @@ def _get_liquidation_bonus(health_factor: uint256) -> uint256:
     else:
         return MAX_LIQUIDATION_BONUS
 
+
+@internal
+def _mint_dsc(amount_dsc_to_mint: uint256):
+    """
+    @notice Internal function to mint DSC tokens
+    @dev Calculates minting fee, updates user's debt with amount + fee,
+         checks health factor, mints amount to user, accumulates fee
+    @param amount_dsc_to_mint Amount of DSC to mint
+    """
+    assert amount_dsc_to_mint > 0, "DSCEngine: Needs more than zero"
     
+    fee: uint256 = (amount_dsc_to_mint * MINTING_FEE_BPS) // 10000
+    total_debt: uint256 = amount_dsc_to_mint + fee
+
+    self.user_to_dsc_minted[msg.sender] += total_debt
+    self.protocol_fees_collected += fee
+
+    # Revert't mint_dsc if ratio is broken
+    self._revert_if_health_factor_broken(msg.sender)
+
+    # Need i_decentralized_stable_coin to call mint
+    extcall DSC.mint(msg.sender, amount_dsc_to_mint)
+    log MintingFeePaid(user=msg.sender, fee=fee)
