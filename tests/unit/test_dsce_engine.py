@@ -1651,70 +1651,70 @@ def test_get_liquidation_bonus_max_tier(dsce):
 # ------------------------------------------------------------------
 #                       MINTING FEE TESTS
 # ------------------------------------------------------------------
-#def test_minting_fee_is_charged(dsce_minted, some_user):
-#    """Verify that minting fee is added to user's debt."""
-#    
-#    fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
-#    expected_debt = AMOUNT_TO_MINT + fee
-#    total_dsc_minted, _ = dsce_minted.get_account_information(some_user)
-#    
-#    assert total_dsc_minted == expected_debt
-#
-#
-#def test_user_receives_correct_amount(dsce_minted, dsc, some_user):
-#    """Verify that user receives requested amount, not amount + fee."""
-#    
-#    user_balance = dsc.balanceOf(some_user)
-#    assert user_balance == AMOUNT_TO_MINT
-#
-#
-#def test_protocol_fees_accumulated(dsce_minted):
-#    """Verify that protocol_fees_collected tracks the correct fee amount."""
-#    
-#    expected_fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
-#    assert dsce_minted.protocol_fees_collected() == expected_fee
-#
-#
-#def test_owner_can_collect_fees(dsce_minted, dsc):
-#    """Verify that owner can collect accumulated protocol fees."""
-#    
-#    expected_fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
-#    
-#    with boa.env.prank(dsce_minted.owner()):
-#        dsce_minted.collect_fees()
-#    
-#    assert dsc.balanceOf(dsce_minted.owner()) == expected_fee
-#    assert dsce_minted.protocol_fees_collected() == 0
-#
-#
-#def test_collect_fees_reverts_if_no_fees(dsce):
-#    """Verify that collect_fees reverts when no fees have been accumulated."""
-#    
-#    with boa.env.prank(dsce.owner()):
-#        with boa.reverts("DSCEngine: No fees to collect"):
-#            dsce.collect_fees()
-#
-#
-#def test_non_owner_cannot_collect_fees(dsce_minted, user):
-#    """Verify that a non-owner cannot collect protocol fees."""
-#    
-#    with boa.env.prank(user):
-#        with boa.reverts("DSCEngine: Not owner"):
-#            dsce_minted.collect_fees()
-#
-#
-#def test_health_factor_accounts_for_fee(dsce, weth, some_user):
-#    """Verify health factor uses full debt (amount + fee), not just amount."""
-#    
-#    with boa.env.prank(some_user):
-#        weth.approve(dsce.address, COLLATERAL_AMOUNT)
-#        dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
-#    
-#    fee = (AMOUNT_TO_MINT * dsce.MINTING_FEE_BPS()) // 10000
-#    total_debt = AMOUNT_TO_MINT + fee
-#    collateral_usd = dsce.get_usd_value(weth.address, COLLATERAL_AMOUNT)
-#    
-#    expected_hf = dsce.calculate_health_factor(total_debt, collateral_usd)
-#    actual_hf = dsce.health_factor(some_user)
-#    
-#    assert actual_hf == expected_hf
+def test_minting_fee_is_charged(dsce_minted, some_user):
+    """Verify that minting fee is added to user's debt."""
+    
+    fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+    expected_debt = AMOUNT_TO_MINT + fee
+    total_dsc_minted, _ = dsce_minted.get_account_information(some_user)
+    
+    assert total_dsc_minted == expected_debt
+
+
+def test_user_receives_correct_amount(dsce_minted, dsc, some_user):
+    """Verify that user receives requested amount, not amount + fee."""
+    
+    user_balance = dsc.balanceOf(some_user)
+    assert user_balance == AMOUNT_TO_MINT
+
+
+def test_protocol_fees_accumulated(dsce_minted):
+    """Verify that protocol_fees_collected tracks the correct fee amount."""
+    
+    expected_fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+    assert dsce_minted.protocol_fees_collected() == expected_fee
+
+
+def test_owner_can_collect_fees(dsce_minted, dsc):
+    """Verify that owner can collect accumulated protocol fees."""
+    
+    expected_fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+    
+    with boa.env.prank(dsce_minted.owner()):
+        dsce_minted.collect_fees()
+    
+    assert dsc.balanceOf(dsce_minted.owner()) == expected_fee
+    assert dsce_minted.protocol_fees_collected() == 0
+
+
+def test_collect_fees_reverts_if_no_fees(dsce):
+    """Verify that collect_fees reverts when no fees have been accumulated."""
+    
+    with boa.env.prank(dsce.owner()):
+        with boa.reverts("DSCEngine: No fees to collect"):
+            dsce.collect_fees()
+
+
+def test_non_owner_cannot_collect_fees(dsce_minted, user):
+    """Verify that a non-owner cannot collect protocol fees."""
+    
+    with boa.env.prank(user):
+        with boa.reverts("DSCEngine: Not owner"):
+            dsce_minted.collect_fees()
+
+
+def test_health_factor_accounts_for_fee(dsce, weth, some_user):
+    """Verify health factor uses full debt (amount + fee), not just amount."""
+    
+    with boa.env.prank(some_user):
+        weth.approve(dsce.address, COLLATERAL_AMOUNT)
+        dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+    
+    fee = (AMOUNT_TO_MINT * dsce.MINTING_FEE_BPS()) // 10000
+    total_debt = AMOUNT_TO_MINT + fee
+    collateral_usd = dsce.get_usd_value(weth.address, COLLATERAL_AMOUNT)
+    
+    expected_hf = dsce.calculate_health_factor(total_debt, collateral_usd)
+    actual_hf = dsce.health_factor(some_user)
+    
+    assert actual_hf == expected_hf
