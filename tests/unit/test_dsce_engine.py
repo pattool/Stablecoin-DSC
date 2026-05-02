@@ -994,7 +994,9 @@ def test_can_redeem_collateral(dsce, weth, dsc, some_user):
 
         # Redeem collateral
         print(f"\n🔄 Step 2: Redeem {COLLATERAL_AMOUNT / 10**18} WETH by burning {AMOUNT_TO_MINT / 10**18} DSC...")    
-        dsce.redeem_for_dsc(weth, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+        fee = (AMOUNT_TO_MINT * dsce.MINTING_FEE_BPS()) // 10000
+        redeemable_collateral = (COLLATERAL_AMOUNT * AMOUNT_TO_MINT) // (AMOUNT_TO_MINT + fee)
+        dsce.redeem_for_dsc(weth, redeemable_collateral, AMOUNT_TO_MINT)
         
         # Final state
         weth_balance_end = weth.balanceOf(some_user)
@@ -1058,8 +1060,10 @@ def test_properly_reports_health_factor(dsce_minted, some_user):
 
 
     # Manual calculation
+    fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+    total_debt = AMOUNT_TO_MINT + fee
     collateral_adjusted = (collateral_value_usd * liquidation_threshold) // liquidation_precision
-    expected_health_factor = to_wei(100, "ether")
+    expected_health_factor = (collateral_adjusted * to_wei(1, "ether")) // total_debt
 
     print(f"\n🧮 Health Factor Calculation:")
     print(f"   Collateral Adjusted: ${collateral_adjusted / 10**18:,.2f}")
@@ -1128,7 +1132,11 @@ def test_health_factor_can_go_below_one(dsce_minted, eth_usd, some_user):
     print(f"   Match: {'✓ YES' if user_health_factor == expected_hf else '✗ NO'}")
     print(f"   Status: {'❌ LIQUIDATABLE (HF < 1.0)' if user_health_factor < 10**18 else '✓ SAFE'}")    
     
-    assert user_health_factor == to_wei(0.9, "ether")
+    fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+    total_debt = AMOUNT_TO_MINT + fee
+    collateral_adjusted = (collateral_value_after * 50) // 100
+    expected_hf = (collateral_adjusted * to_wei(1, "ether")) // total_debt
+    assert user_health_factor == expected_hf
 
     print(f"\n🎯 SUCCESS: HF dropped to {user_health_factor / 10**18:.4f} - position is now liquidatable")
     print(f"{'='*70}\n")
@@ -1585,7 +1593,7 @@ def test_liquidation_bonus_is_mid_when_hf_between_0_5_and_0_8(dsce, weth, eth_us
 
     # Drop price to get HF between 0.5 and 0.8
     # 10 ETH * $10 = $100 collateral, $50 adjusted, HF = 0.5
-    eth_usd.updateAnswer(10 * 10**8)
+    eth_usd.updateAnswer(11 * 10**8)
     
     health_factor = dsce.health_factor(some_user)
     assert health_factor >= 5 * 10**17  # >= 0.5
@@ -1638,3 +1646,75 @@ def test_get_liquidation_bonus_max_tier(dsce):
     health_factor = 4 * 10**17  # 0.4
     bonus = dsce.internal._get_liquidation_bonus(health_factor)
     assert bonus == dsce.MAX_LIQUIDATION_BONUS()
+
+
+# ------------------------------------------------------------------
+#                       MINTING FEE TESTS
+# ------------------------------------------------------------------
+#def test_minting_fee_is_charged(dsce_minted, some_user):
+#    """Verify that minting fee is added to user's debt."""
+#    
+#    fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+#    expected_debt = AMOUNT_TO_MINT + fee
+#    total_dsc_minted, _ = dsce_minted.get_account_information(some_user)
+#    
+#    assert total_dsc_minted == expected_debt
+#
+#
+#def test_user_receives_correct_amount(dsce_minted, dsc, some_user):
+#    """Verify that user receives requested amount, not amount + fee."""
+#    
+#    user_balance = dsc.balanceOf(some_user)
+#    assert user_balance == AMOUNT_TO_MINT
+#
+#
+#def test_protocol_fees_accumulated(dsce_minted):
+#    """Verify that protocol_fees_collected tracks the correct fee amount."""
+#    
+#    expected_fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+#    assert dsce_minted.protocol_fees_collected() == expected_fee
+#
+#
+#def test_owner_can_collect_fees(dsce_minted, dsc):
+#    """Verify that owner can collect accumulated protocol fees."""
+#    
+#    expected_fee = (AMOUNT_TO_MINT * dsce_minted.MINTING_FEE_BPS()) // 10000
+#    
+#    with boa.env.prank(dsce_minted.owner()):
+#        dsce_minted.collect_fees()
+#    
+#    assert dsc.balanceOf(dsce_minted.owner()) == expected_fee
+#    assert dsce_minted.protocol_fees_collected() == 0
+#
+#
+#def test_collect_fees_reverts_if_no_fees(dsce):
+#    """Verify that collect_fees reverts when no fees have been accumulated."""
+#    
+#    with boa.env.prank(dsce.owner()):
+#        with boa.reverts("DSCEngine: No fees to collect"):
+#            dsce.collect_fees()
+#
+#
+#def test_non_owner_cannot_collect_fees(dsce_minted, user):
+#    """Verify that a non-owner cannot collect protocol fees."""
+#    
+#    with boa.env.prank(user):
+#        with boa.reverts("DSCEngine: Not owner"):
+#            dsce_minted.collect_fees()
+#
+#
+#def test_health_factor_accounts_for_fee(dsce, weth, some_user):
+#    """Verify health factor uses full debt (amount + fee), not just amount."""
+#    
+#    with boa.env.prank(some_user):
+#        weth.approve(dsce.address, COLLATERAL_AMOUNT)
+#        dsce.deposit_and_mint(weth.address, COLLATERAL_AMOUNT, AMOUNT_TO_MINT)
+#    
+#    fee = (AMOUNT_TO_MINT * dsce.MINTING_FEE_BPS()) // 10000
+#    total_debt = AMOUNT_TO_MINT + fee
+#    collateral_usd = dsce.get_usd_value(weth.address, COLLATERAL_AMOUNT)
+#    
+#    expected_hf = dsce.calculate_health_factor(total_debt, collateral_usd)
+#    actual_hf = dsce.health_factor(some_user)
+#    
+#    assert actual_hf == expected_hf
