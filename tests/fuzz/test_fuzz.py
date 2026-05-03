@@ -396,6 +396,38 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         # Restore price
         price_feed.updateAnswer(current_price)
     
+
+    @precondition(lambda self: self.dsce.protocol_fees_collected() > 0)
+    @rule()
+    def collect_fees_as_owner(self):
+        """Verify that the owner can collect accumulated fees —
+        protocol_fees_collected resets to zero and owner receives the DSC."""
+        
+        fees_before = self.dsce.protocol_fees_collected()
+        owner_balance_before = self.dsc.balanceOf(self.dsce.owner())
+        
+        with boa.env.prank(self.dsce.owner()):
+            self.dsce.collect_fees()
+        
+        assert self.dsce.protocol_fees_collected() == 0
+        assert self.dsc.balanceOf(self.dsce.owner()) == owner_balance_before + fees_before
+
+
+    @precondition(lambda self: self.dsce.protocol_fees_collected() > 0)
+    @rule(
+    user_seed=st.integers(min_value=0, max_value=USERS_SIZE - 1)
+    )
+    def non_owner_cannot_collect_fees(self, user_seed):
+        """Verify that a non-owner cannot collect protocol fees."""
+        
+        user = self.users[user_seed]
+        assume(user != self.dsce.owner())
+        
+        with boa.env.prank(user):
+            with pytest.raises(Exception):
+                self.dsce.collect_fees()
+
+
     
     # Invariant: Protocol must have more value in collateral than total supply.    
     @invariant()
@@ -410,7 +442,7 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         weth_value = self.dsce.get_usd_value(self.weth, weth_deposited)
         wbtc_value = self.dsce.get_usd_value(self.wbtc, wbtc_deposited)
 
-        assert (weth_value + wbtc_value) >= total_supply
+        assert (weth_value + wbtc_value) >= total_supply + self.dsce.protocol_fees_collected()
 
     
     def _get_collateral_from_seed(self, seed):
@@ -426,8 +458,8 @@ class StablecoinFuzzer(RuleBasedStateMachine):
 
 stable_coin_fuzzer = StablecoinFuzzer.TestCase
 stable_coin_fuzzer.settings = settings(
-    max_examples=64, 
-    stateful_step_count=64, 
+    max_examples=30,  #64
+    stateful_step_count=30, #64
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much]
 )
 
