@@ -427,7 +427,6 @@ class StablecoinFuzzer(RuleBasedStateMachine):
             with pytest.raises(Exception):
                 self.dsce.collect_fees()
 
-
     
     # Invariant: Protocol must have more value in collateral than total supply.    
     @invariant()
@@ -458,8 +457,8 @@ class StablecoinFuzzer(RuleBasedStateMachine):
 
 stable_coin_fuzzer = StablecoinFuzzer.TestCase
 stable_coin_fuzzer.settings = settings(
-    max_examples=30,  #64
-    stateful_step_count=30, #64
+    max_examples=64,  #64
+    stateful_step_count=64, #64
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much]
 )
 
