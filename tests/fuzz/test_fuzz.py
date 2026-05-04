@@ -160,9 +160,10 @@ class StablecoinFuzzer(RuleBasedStateMachine):
         stress testing the protocol's health factor under mild price drops."""
 
         assume(not self.dsce.paused()) # Add
-        
-        self.mint_and_deposit(collateral_seed, user_seed, amount)
-        self.update_collateral_price(collateral_seed, 0.85) # Only drop 15% instead of 70%
+
+        with boa.env.anchor():
+            self.mint_and_deposit(collateral_seed, user_seed, amount)
+            self.update_collateral_price(collateral_seed, 0.85) # Only drop 15% instead of 70%
 
 
     @rule(
