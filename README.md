@@ -73,17 +73,10 @@ The protocol enforces a minimum 200% collateralization ratio. Undercollateralize
 
 - **Unit tests** — Full coverage of all contract functions and edge cases
 - **Fuzz tests** — Stateful property-based testing with Hypothesis
-- **Coverage** — 97% on `dsc_engine.vy`
+- **Coverage** — 98% on `dsc_engine.vy`
 
 Key fuzz invariant tested:  
 > *The total USD value of collateral held by the protocol must always be ≥ the total DSC supply.*
-
----
-
-## Planned Features
-
-- **Support for More Collateral Tokens** — Extend beyond 2 tokens using dynamic arrays
-- **Interest Rate on Minted DSC** — Continuous debt accumulation (similar to MakerDAO stability fee)
 
 ---
 

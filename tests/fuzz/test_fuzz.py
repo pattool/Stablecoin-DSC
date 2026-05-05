@@ -455,7 +455,6 @@ class StablecoinFuzzer(RuleBasedStateMachine):
             return self.wbtc
 
 
-
 stable_coin_fuzzer = StablecoinFuzzer.TestCase
 stable_coin_fuzzer.settings = settings(
     max_examples=64,  #64
