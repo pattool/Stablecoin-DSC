@@ -89,7 +89,7 @@ cd mox-stablecoin-cu
 mox install
 ```
 
-If you need a virtual environment:
+If you run into environment issues, use uv:
 
 ```bash
 # macOS / Linux
@@ -104,12 +104,14 @@ source .venv/bin/activate
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
+> Full `uv` docs: [docs.astral.sh/uv](https://docs.astral.sh/uv)
+
 ---
 
 ## Quickstart
 
 ```bash
-# Deploy locally
+# Deploy to a local in-memory network (no setup needed)
 mox run deploy
 
 # Compile
