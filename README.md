@@ -1,13 +1,14 @@
 # Decentralized Stablecoin (DSC) — Vyper / Moccasin
 
 A decentralized, algorithmic stablecoin protocol built in **Vyper 0.4.1** using the **Moccasin** framework.  
-Inspired by MakerDAO/DAI. Extended and hardened with additional security features beyond the original course material from Cyfrin Updraft.
+Inspired by MakerDAO/DAI. Extended and hardened with additional security features with a security-first design and comprehensive test coverage beyond the original course material from Cyfrin Updraft.
 
 ---
 
 ## Overview
 
-Users deposit crypto collateral (WETH or WBTC) to mint DSC, a USD-pegged stablecoin.  
+Users deposit crypto collateral (WETH or WBTC) to mint DSC, a USD-pegged stablecoin.
+It is backed exclusively by exogenous crypto collateral (WETH and WBTC), and governed by on-chain rules — no admin can print DSC out of thin air.
 The protocol enforces a minimum 200% collateralization ratio. Undercollateralized positions can be liquidated by anyone.
 
 - **Collateral:** Exogenous (WETH, WBTC)
