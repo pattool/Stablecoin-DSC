@@ -1,6 +1,6 @@
 # Decentralized Stablecoin (DSC) — Vyper / Moccasin
 
-A decentralized, algorithmic stablecoin protocol built in **Vyper 0.4.1** using the **Moccasin** framework.  
+A decentralized, overcollateralized algorithmic stablecoin protocol built in **Vyper 0.4.1** using the **Moccasin** framework.  
 Inspired by MakerDAO/DAI. Extended and hardened with additional security features with a security-first design and comprehensive test coverage beyond the original course material from Cyfrin Updraft.
 
 ---
@@ -89,7 +89,7 @@ cd mox-stablecoin-cu
 mox install
 ```
 
-If you need a virtual environment:
+If you run into environment issues, use uv:
 
 ```bash
 # macOS / Linux
@@ -104,12 +104,14 @@ source .venv/bin/activate
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
+> Full `uv` docs: [docs.astral.sh/uv](https://docs.astral.sh/uv)
+
 ---
 
 ## Quickstart
 
 ```bash
-# Deploy locally
+# Deploy to a local in-memory network (no setup needed)
 mox run deploy
 
 # Compile
